@@ -233,6 +233,98 @@ export const MATERIAL_OPTIONS: Record<string, string[]> = {
   ],
 };
 
+// ── Module 4: Invoicing & Payments ──
+
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "partial"
+  | "paid"
+  | "overdue"
+  | "cancelled";
+
+export const INVOICE_STATUS_CONFIG: Record<
+  InvoiceStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  draft: {
+    label: "Draft",
+    color: "text-slate-400",
+    bgColor: "bg-slate-500/20",
+  },
+  sent: { label: "Sent", color: "text-blue-400", bgColor: "bg-blue-500/20" },
+  viewed: {
+    label: "Viewed",
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/20",
+  },
+  partial: {
+    label: "Partial",
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/20",
+  },
+  paid: {
+    label: "Paid",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+  },
+  overdue: {
+    label: "Overdue",
+    color: "text-red-400",
+    bgColor: "bg-red-500/20",
+  },
+  cancelled: {
+    label: "Cancelled",
+    color: "text-slate-500",
+    bgColor: "bg-slate-600/20",
+  },
+};
+
+export type PaymentMethod = "stripe" | "cash" | "check" | "other";
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface Invoice {
+  id: string;
+  customer_id: string;
+  lead_id: string | null;
+  estimate_id: string | null;
+  invoice_number: string;
+  status: InvoiceStatus;
+  line_items: InvoiceLineItem[];
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  notes: string | null;
+  due_date: string;
+  sent_at: string | null;
+  viewed_at: string | null;
+  paid_at: string | null;
+  payment_method: PaymentMethod | null;
+  stripe_payment_intent_id: string | null;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  method: PaymentMethod;
+  stripe_payment_id: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 // ── Module 3: Vision Studio ──
 
 export interface VisionIteration {

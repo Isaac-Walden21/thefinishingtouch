@@ -10,6 +10,7 @@ import {
   Hammer,
   Calculator,
   Camera,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/leads", label: "Leads", icon: GitPullRequestArrow },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/estimates", label: "Estimates", icon: Calculator },
+  { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/vision", label: "Vision Studio", icon: Camera },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

@@ -101,3 +101,71 @@ CREATE TRIGGER customers_updated_at
 CREATE TRIGGER leads_updated_at
   BEFORE UPDATE ON leads
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ── Module 4: Invoicing & Payments ──
+
+CREATE TYPE invoice_status AS ENUM (
+  'draft',
+  'sent',
+  'viewed',
+  'partial',
+  'paid',
+  'overdue',
+  'cancelled'
+);
+
+CREATE TYPE payment_method AS ENUM (
+  'stripe',
+  'cash',
+  'check',
+  'other'
+);
+
+-- Invoice number sequence (TFT-0001 format)
+CREATE SEQUENCE invoice_number_seq START 1;
+
+-- Invoices
+CREATE TABLE invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+  estimate_id UUID,
+  invoice_number TEXT NOT NULL DEFAULT 'TFT-' || lpad(nextval('invoice_number_seq')::text, 4, '0'),
+  status invoice_status NOT NULL DEFAULT 'draft',
+  line_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  tax_rate NUMERIC(5, 4) NOT NULL DEFAULT 0.07,
+  tax_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  notes TEXT,
+  due_date DATE NOT NULL,
+  sent_at TIMESTAMPTZ,
+  viewed_at TIMESTAMPTZ,
+  paid_at TIMESTAMPTZ,
+  payment_method payment_method,
+  stripe_payment_intent_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Payments
+CREATE TABLE payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  amount NUMERIC(10, 2) NOT NULL,
+  method payment_method NOT NULL DEFAULT 'other',
+  stripe_payment_id TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX idx_invoices_customer_id ON invoices(customer_id);
+CREATE INDEX idx_invoices_status ON invoices(status);
+CREATE INDEX idx_invoices_invoice_number ON invoices(invoice_number);
+CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
+
+-- Trigger
+CREATE TRIGGER invoices_updated_at
+  BEFORE UPDATE ON invoices
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
