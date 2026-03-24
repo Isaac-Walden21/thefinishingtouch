@@ -8,12 +8,16 @@ import {
   Users,
   Settings,
   Hammer,
+  Calculator,
+  Camera,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: GitPullRequestArrow },
   { href: "/customers", label: "Customers", icon: Users },
+  { href: "/estimates", label: "Estimates", icon: Calculator },
+  { href: "/vision", label: "Vision Studio", icon: Camera },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

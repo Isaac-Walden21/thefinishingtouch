@@ -106,3 +106,152 @@ export const PIPELINE_STAGES: LeadStatus[] = [
   "completed",
   "lost",
 ];
+
+// ── Module 2: Estimates ──
+
+export type EstimateStatus = "draft" | "sent" | "accepted" | "declined";
+
+export const ESTIMATE_STATUS_CONFIG: Record<
+  EstimateStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  draft: {
+    label: "Draft",
+    color: "text-slate-400",
+    bgColor: "bg-slate-500/20",
+  },
+  sent: { label: "Sent", color: "text-blue-400", bgColor: "bg-blue-500/20" },
+  accepted: {
+    label: "Accepted",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+  },
+  declined: {
+    label: "Declined",
+    color: "text-red-400",
+    bgColor: "bg-red-500/20",
+  },
+};
+
+export interface EstimateLineItem {
+  id: string;
+  category: "material" | "labor" | "equipment";
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_cost: number;
+  total: number;
+}
+
+export interface Estimate {
+  id: string;
+  customer_id: string | null;
+  customer_name: string;
+  status: EstimateStatus;
+  project_type: string;
+  dimensions: {
+    length?: number;
+    width?: number;
+    depth?: number;
+    square_footage?: number;
+    linear_feet?: number;
+  };
+  materials: string[];
+  complexity: "easy" | "moderate" | "difficult";
+  options: {
+    demolition: boolean;
+    grading: boolean;
+    sealing: boolean;
+    color_stain: string;
+  };
+  line_items: EstimateLineItem[];
+  subtotal: number;
+  margin: number;
+  total: number;
+  timeline: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+}
+
+export const PROJECT_TYPES = [
+  "Concrete Patio",
+  "Concrete Driveway",
+  "Stamped Concrete",
+  "Decorative Curbing",
+  "Post Frame Building",
+  "Landscaping",
+  "Firewood Delivery",
+] as const;
+
+export const MATERIAL_OPTIONS: Record<string, string[]> = {
+  "Concrete Patio": [
+    "Broom Finish",
+    "Exposed Aggregate",
+    "Colored Concrete",
+    "Broomed with Border",
+  ],
+  "Concrete Driveway": [
+    "Broom Finish",
+    "Exposed Aggregate",
+    "Colored Concrete",
+    "Stamped Border",
+  ],
+  "Stamped Concrete": [
+    "Ashlar Slate",
+    "Cobblestone",
+    "Wood Plank",
+    "Random Stone",
+    "Herringbone Brick",
+    "European Fan",
+  ],
+  "Decorative Curbing": [
+    "Slant Style",
+    "Mower Edge",
+    "Curb & Gutter",
+    "Stamped Curbing",
+  ],
+  "Post Frame Building": [
+    "Metal Roof & Siding",
+    "Board & Batten",
+    "Wainscot Siding",
+    "Stone Veneer Accent",
+  ],
+  Landscaping: [
+    "Mulch Beds",
+    "Rock/Gravel Beds",
+    "Retaining Walls",
+    "Sod Installation",
+    "Plantings & Shrubs",
+  ],
+  "Firewood Delivery": [
+    "Seasoned Hardwood",
+    "Mixed Hardwood",
+    "Oak Only",
+    "Cherry/Hickory Mix",
+  ],
+};
+
+// ── Module 3: Vision Studio ──
+
+export interface VisionIteration {
+  id: string;
+  image_url: string;
+  prompt_used: string;
+  add_on: string | null;
+  created_at: string;
+}
+
+export interface VisionProject {
+  id: string;
+  customer_id: string | null;
+  customer_name: string | null;
+  original_image_url: string;
+  service_type: string;
+  description: string;
+  iterations: VisionIteration[];
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+}
