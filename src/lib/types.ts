@@ -325,6 +325,160 @@ export interface Payment {
   created_at: string;
 }
 
+// ── Module 5: AI Agents ──
+
+export type AgentType =
+  | "lead_followup"
+  | "quote_followup"
+  | "review_request"
+  | "website_chatbot";
+
+export type AgentStatus = "active" | "paused";
+
+export type ApprovalMode = "auto_send" | "requires_approval";
+
+export interface AgentConfig {
+  wait_hours: number;
+  escalate_after_days: number;
+  approval_mode: ApprovalMode;
+  message_template: string;
+}
+
+export interface AgentAction {
+  id: string;
+  agent_id: string;
+  customer_id: string | null;
+  lead_id: string | null;
+  action_type: "email_sent" | "sms_sent" | "escalated" | "lead_created" | "review_requested";
+  description: string;
+  status: "completed" | "pending_approval" | "failed";
+  created_at: string;
+}
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  type: AgentType;
+  description: string;
+  status: AgentStatus;
+  config: AgentConfig;
+  last_run: string | null;
+  actions_today: number;
+  actions_this_week: number;
+  created_at: string;
+}
+
+export const AGENT_TYPE_CONFIG: Record<
+  AgentType,
+  { label: string; color: string; bgColor: string; icon: string }
+> = {
+  lead_followup: {
+    label: "Lead Follow-Up",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/20",
+    icon: "UserPlus",
+  },
+  quote_followup: {
+    label: "Quote Follow-Up",
+    color: "text-orange-400",
+    bgColor: "bg-orange-500/20",
+    icon: "FileText",
+  },
+  review_request: {
+    label: "Review Request",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+    icon: "Star",
+  },
+  website_chatbot: {
+    label: "Website Chatbot",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/20",
+    icon: "MessageCircle",
+  },
+};
+
+// ── Module 6: Email Marketing ──
+
+export type CampaignStatus = "draft" | "scheduled" | "sending" | "sent";
+
+export type AutomationStatus = "active" | "paused" | "draft";
+
+export interface MarketingContact {
+  id: string;
+  customer_id: string;
+  name: string;
+  email: string;
+  tags: string[];
+  subscribed: boolean;
+  created_at: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  category: "seasonal_promo" | "new_service" | "project_showcase" | "review_request" | "custom";
+  merge_fields: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  template_id: string;
+  segment_tags: string[];
+  status: CampaignStatus;
+  scheduled_at: string | null;
+  sent_at: string | null;
+  recipients_count: number;
+  opens: number;
+  clicks: number;
+  unsubscribes: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutomationEmail {
+  id: string;
+  subject: string;
+  body: string;
+  delay_days: number;
+}
+
+export interface Automation {
+  id: string;
+  name: string;
+  description: string;
+  trigger: string;
+  status: AutomationStatus;
+  emails: AutomationEmail[];
+  enrolled_count: number;
+  completed_count: number;
+  created_at: string;
+}
+
+export const CAMPAIGN_STATUS_CONFIG: Record<
+  CampaignStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  draft: { label: "Draft", color: "text-slate-400", bgColor: "bg-slate-500/20" },
+  scheduled: { label: "Scheduled", color: "text-blue-400", bgColor: "bg-blue-500/20" },
+  sending: { label: "Sending", color: "text-yellow-400", bgColor: "bg-yellow-500/20" },
+  sent: { label: "Sent", color: "text-emerald-400", bgColor: "bg-emerald-500/20" },
+};
+
+export const AUTOMATION_STATUS_CONFIG: Record<
+  AutomationStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  active: { label: "Active", color: "text-emerald-400", bgColor: "bg-emerald-500/20" },
+  paused: { label: "Paused", color: "text-yellow-400", bgColor: "bg-yellow-500/20" },
+  draft: { label: "Draft", color: "text-slate-400", bgColor: "bg-slate-500/20" },
+};
+
 // ── Module 3: Vision Studio ──
 
 export interface VisionIteration {

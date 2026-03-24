@@ -11,6 +11,8 @@ import {
   Calculator,
   Camera,
   FileText,
+  Bot,
+  Megaphone,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +22,8 @@ const navItems = [
   { href: "/estimates", label: "Estimates", icon: Calculator },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/vision", label: "Vision Studio", icon: Camera },
+  { href: "/agents", label: "AI Agents", icon: Bot },
+  { href: "/marketing", label: "Marketing", icon: Megaphone },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
