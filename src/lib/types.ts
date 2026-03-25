@@ -15,13 +15,17 @@ export type ActivityType =
   | "note"
   | "ai_action";
 
-export type TeamRole = "admin" | "manager" | "crew";
+export type TeamRole = "admin" | "manager" | "crew" | "sales_rep";
 
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
   role: TeamRole;
+  phone: string | null;
+  color: string;
+  notification_email: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -49,9 +53,53 @@ export interface Lead {
   project_type: string | null;
   project_description: string | null;
   assigned_to: string | null;
+  vapi_call_id: string | null;
+  call_transcript_url: string | null;
+  call_duration_seconds: number | null;
   created_at: string;
   updated_at: string;
   customer?: Customer;
+}
+
+// Calendar & Availability
+export type EventType = "quote_visit" | "blocked" | "personal";
+export type EventStatus = "scheduled" | "completed" | "cancelled" | "no_show";
+
+export interface AvailabilityRule {
+  id: string;
+  team_member_id: string;
+  day_of_week: number; // 0=Sun, 6=Sat
+  start_time: string;  // HH:MM
+  end_time: string;    // HH:MM
+  is_enabled: boolean;
+}
+
+export interface CalendarEvent {
+  id: string;
+  team_member_id: string;
+  type: EventType;
+  status: EventStatus;
+  title: string;
+  description: string | null;
+  start_time: string; // ISO 8601 UTC
+  end_time: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  service_type: string | null;
+  project_description: string | null;
+  created_by: "agent" | "manual";
+  lead_id: string | null;
+  created_at: string;
+  updated_at: string;
+  team_member?: TeamMember;
+}
+
+export interface TimeSlot {
+  start: string; // ISO 8601 UTC
+  end: string;
+  team_member_id: string;
+  team_member_name: string;
 }
 
 export interface Activity {
