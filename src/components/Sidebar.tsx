@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -7,12 +8,12 @@ import {
   GitPullRequestArrow,
   Users,
   Settings,
-  Hammer,
   Calculator,
   Camera,
   FileText,
   Bot,
   Megaphone,
+  Calendar,
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/estimates", label: "Estimates", icon: Calculator },
   { href: "/invoices", label: "Invoices", icon: FileText },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/vision", label: "Vision Studio", icon: Camera },
   { href: "/agents", label: "AI Agents", icon: Bot },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
@@ -31,20 +33,21 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-[#0f1729] border-r border-slate-700/50">
-      <div className="flex h-16 items-center gap-3 border-b border-slate-700/50 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
-          <Hammer className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-sm font-bold text-white leading-tight">
-            The Finishing Touch
-          </h1>
-          <p className="text-[11px] text-slate-400">CRM Platform</p>
-        </div>
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-[#0F172A]">
+      {/* Brand header */}
+      <div className="flex items-center justify-center border-b border-white/10 px-1 py-1">
+        <Image
+          src="/logo.png"
+          alt="The Finishing Touch LLC"
+          width={100}
+          height={37}
+          className="object-contain"
+          priority
+        />
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -52,10 +55,10 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-blue-600/20 text-blue-400"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  ? "bg-[#0085FF] text-white shadow-lg shadow-[#0085FF]/20"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
               }`}
             >
               <item.icon className="h-5 w-5" />
@@ -65,13 +68,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-slate-700/50 p-4">
+      {/* User profile */}
+      <div className="border-t border-white/10 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0085FF] text-xs font-bold text-white">
             MH
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-200">
+            <p className="text-sm font-medium text-white">
               Mike Henderson
             </p>
             <p className="text-xs text-slate-500">Admin</p>
