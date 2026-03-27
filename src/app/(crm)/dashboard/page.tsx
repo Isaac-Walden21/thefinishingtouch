@@ -12,11 +12,8 @@ import {
   CheckCircle,
   Clock,
   Camera,
-  Zap,
   Calculator,
   Send,
-  TrendingUp,
-  TrendingDown,
 } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
 import ActivityTimeline from "@/components/ActivityTimeline";
@@ -104,8 +101,8 @@ export default function DashboardPage() {
         label: `Follow up with ${customerMap.get(l.customer_id)?.name ?? "Unknown"}`,
         detail: l.project_type ?? "New lead",
         type: "lead" as const,
-        color: "text-blue-400",
-        bgColor: "bg-blue-500/20",
+        color: "text-[#0085FF]",
+        bgColor: "bg-[#0085FF]/10",
       })),
     ...demoLeads
       .filter((l) => l.status === "quoted")
@@ -114,8 +111,8 @@ export default function DashboardPage() {
         label: `Check on quote for ${customerMap.get(l.customer_id)?.name ?? "Unknown"}`,
         detail: `$${l.quoted_amount?.toLocaleString() ?? 0}`,
         type: "quote" as const,
-        color: "text-orange-400",
-        bgColor: "bg-orange-500/20",
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
       })),
     ...demoAgentActions
       .filter((a) => a.status === "pending_approval")
@@ -124,24 +121,25 @@ export default function DashboardPage() {
         label: "Review agent action",
         detail: a.description,
         type: "agent" as const,
-        color: "text-purple-400",
-        bgColor: "bg-purple-500/20",
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
       })),
   ].slice(0, 6);
 
   return (
     <div className="p-8">
+      {/* Page header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">
             Welcome back, Mike. Here&apos;s your command center.
           </p>
         </div>
         <div className="flex gap-3">
           <Link
             href="/customers/new"
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0085FF]/20 transition-colors hover:bg-[#0177E3]"
           >
             <Plus className="h-4 w-4" />
             New Lead
@@ -194,12 +192,12 @@ export default function DashboardPage() {
       {/* MIDDLE ROW — Pipeline + Agent Summary */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Pipeline Summary */}
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">Pipeline Summary</h2>
+            <h2 className="text-lg font-semibold text-[#0F172A]">Pipeline Summary</h2>
             <Link
               href="/leads"
-              className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+              className="flex items-center gap-1 text-sm font-medium text-[#0085FF] hover:text-[#0177E3]"
             >
               View pipeline
               <ArrowRight className="h-4 w-4" />
@@ -213,9 +211,9 @@ export default function DashboardPage() {
                     {config.label}
                   </span>
                 </div>
-                <div className="flex-1 h-6 rounded bg-slate-800/50 overflow-hidden">
+                <div className="flex-1 h-6 rounded-full bg-slate-100 overflow-hidden">
                   <div
-                    className={`h-full rounded ${config.bgColor} flex items-center transition-all`}
+                    className={`h-full rounded-full ${config.bgColor} flex items-center transition-all`}
                     style={{
                       width: `${(count / maxPipelineCount) * 100}%`,
                       minWidth: count > 0 ? "2rem" : "0",
@@ -232,30 +230,30 @@ export default function DashboardPage() {
         </div>
 
         {/* AI Agent Summary */}
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-[#0F172A]">
               AI Agent Activity
             </h2>
             <Link
               href="/agents"
-              className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+              className="flex items-center gap-1 text-sm font-medium text-[#0085FF] hover:text-[#0177E3]"
             >
               Manage agents
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="rounded-lg bg-[#0d1526] p-4 text-center">
-              <p className="text-2xl font-bold text-white">{activeAgents}</p>
+            <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 text-center">
+              <p className="text-2xl font-bold text-[#0F172A]">{activeAgents}</p>
               <p className="text-xs text-slate-500 mt-1">Active Agents</p>
             </div>
-            <div className="rounded-lg bg-[#0d1526] p-4 text-center">
-              <p className="text-2xl font-bold text-white">{agentActionsToday}</p>
+            <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 text-center">
+              <p className="text-2xl font-bold text-[#0F172A]">{agentActionsToday}</p>
               <p className="text-xs text-slate-500 mt-1">Actions Today</p>
             </div>
-            <div className="rounded-lg bg-[#0d1526] p-4 text-center">
-              <p className={`text-2xl font-bold ${pendingApprovals > 0 ? "text-yellow-400" : "text-white"}`}>
+            <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 text-center">
+              <p className={`text-2xl font-bold ${pendingApprovals > 0 ? "text-amber-600" : "text-[#0F172A]"}`}>
                 {pendingApprovals}
               </p>
               <p className="text-xs text-slate-500 mt-1">Pending Approvals</p>
@@ -268,18 +266,18 @@ export default function DashboardPage() {
               .map((action) => (
                 <div
                   key={action.id}
-                  className="flex items-center gap-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 p-3"
+                  className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3"
                 >
-                  <AlertTriangle className="h-4 w-4 text-yellow-400 shrink-0" />
-                  <p className="text-xs text-slate-300 truncate">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <p className="text-xs text-slate-700 truncate">
                     {action.description}
                   </p>
                 </div>
               ))}
             {pendingApprovals === 0 && (
-              <div className="flex items-center gap-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3">
-                <CheckCircle className="h-4 w-4 text-emerald-400" />
-                <p className="text-xs text-slate-300">
+              <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <p className="text-xs text-slate-700">
                   All agent actions are up to date
                 </p>
               </div>
@@ -291,16 +289,16 @@ export default function DashboardPage() {
       {/* BOTTOM ROW — Activity + Follow-ups */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Recent Activity */}
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-          <h2 className="mb-6 text-lg font-semibold text-white">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-[#0F172A]">
             Recent Activity
           </h2>
           <ActivityTimeline activities={recentActivities} />
         </div>
 
         {/* Follow-ups & Tasks */}
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-          <h2 className="mb-6 text-lg font-semibold text-white">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-[#0F172A]">
             Follow-ups &amp; Tasks
           </h2>
           <div className="space-y-3">
@@ -312,7 +310,7 @@ export default function DashboardPage() {
                     ? "/agents"
                     : `/leads/${item.id}`
                 }
-                className="flex items-center gap-3 rounded-lg border border-slate-700/50 bg-[#0d1526] p-4 transition-colors hover:border-slate-600"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 transition-all hover:border-[#0085FF]/30 hover:shadow-sm"
               >
                 <div className={`rounded-lg p-2 ${item.bgColor}`}>
                   {item.type === "lead" && (
@@ -326,14 +324,14 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-200">
+                  <p className="text-sm font-medium text-[#0F172A]">
                     {item.label}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
                     {item.detail}
                   </p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-600" />
+                <ArrowRight className="h-4 w-4 text-slate-400" />
               </Link>
             ))}
             {followUps.length === 0 && (
@@ -346,43 +344,43 @@ export default function DashboardPage() {
       </div>
 
       {/* QUICK ACTIONS BAR */}
-      <div className="mt-8 rounded-xl border border-slate-700/50 bg-[#111a2e] p-4">
+      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-3 overflow-x-auto">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider shrink-0">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider shrink-0">
             Quick Actions
           </span>
-          <div className="h-4 w-px bg-slate-700/50" />
+          <div className="h-4 w-px bg-slate-200" />
           <Link
             href="/customers/new"
-            className="flex items-center gap-2 rounded-lg bg-[#0d1526] border border-slate-700/50 px-4 py-2 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
           >
             <Plus className="h-3.5 w-3.5" />
             Add New Lead
           </Link>
           <Link
             href="/estimates/new"
-            className="flex items-center gap-2 rounded-lg bg-[#0d1526] border border-slate-700/50 px-4 py-2 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
           >
             <Calculator className="h-3.5 w-3.5" />
             Create Estimate
           </Link>
           <Link
             href="/invoices/new"
-            className="flex items-center gap-2 rounded-lg bg-[#0d1526] border border-slate-700/50 px-4 py-2 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
           >
             <Send className="h-3.5 w-3.5" />
             Send Invoice
           </Link>
           <Link
             href="/vision"
-            className="flex items-center gap-2 rounded-lg bg-[#0d1526] border border-slate-700/50 px-4 py-2 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
           >
             <Camera className="h-3.5 w-3.5" />
             Open Vision Studio
           </Link>
           <Link
             href="/agents"
-            className="flex items-center gap-2 rounded-lg bg-[#0d1526] border border-slate-700/50 px-4 py-2 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
           >
             <Bot className="h-3.5 w-3.5" />
             View Agent Queue

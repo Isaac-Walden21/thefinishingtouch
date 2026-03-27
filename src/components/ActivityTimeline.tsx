@@ -12,27 +12,27 @@ const activityConfig: Record<
   ActivityType,
   { icon: typeof Phone; color: string; bgColor: string }
 > = {
-  call: { icon: Phone, color: "text-blue-400", bgColor: "bg-blue-500/20" },
-  email: { icon: Mail, color: "text-cyan-400", bgColor: "bg-cyan-500/20" },
+  call: { icon: Phone, color: "text-[#0085FF]", bgColor: "bg-[#0085FF]/10" },
+  email: { icon: Mail, color: "text-cyan-600", bgColor: "bg-cyan-50" },
   quote: {
     icon: FileText,
-    color: "text-orange-400",
-    bgColor: "bg-orange-500/20",
+    color: "text-orange-600",
+    bgColor: "bg-orange-50",
   },
   payment: {
     icon: CreditCard,
-    color: "text-emerald-400",
-    bgColor: "bg-emerald-500/20",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
   },
   note: {
     icon: StickyNote,
-    color: "text-slate-400",
-    bgColor: "bg-slate-500/20",
+    color: "text-slate-500",
+    bgColor: "bg-slate-100",
   },
   ai_action: {
     icon: Bot,
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/20",
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
   },
 };
 
@@ -82,11 +82,11 @@ export default function ActivityTimeline({
               <div className={`rounded-full p-2 ${config.bgColor}`}>
                 <Icon className={`h-4 w-4 ${config.color}`} />
               </div>
-              {!isLast && <div className="w-px flex-1 bg-slate-700/50" />}
+              {!isLast && <div className="w-px flex-1 bg-slate-200" />}
             </div>
             <div className={`pb-6 ${isLast ? "" : ""}`}>
-              <p className="text-sm text-slate-200">{activity.description}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-sm text-slate-700">{activity.description}</p>
+              <p className="mt-1 text-xs text-slate-400">
                 {formatDate(activity.created_at)} at{" "}
                 {formatTime(activity.created_at)}
               </p>
