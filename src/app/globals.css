@@ -1,24 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a101e;
-  --foreground: #e2e8f0;
+  /* Brand palette — The Finishing Touch LLC */
+  --brand-blue: #0085FF;
+  --brand-blue-hover: #0177E3;
+  --brand-blue-light: #E7F6FF;
+  --brand-navy: #0F172A;
+  --brand-charcoal: #212A37;
+
+  /* Semantic tokens */
+  --background: #F1F5F9;
+  --foreground: #0F172A;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --border: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --muted: #64748B;
+  --muted-foreground: #94A3B8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-brand: var(--brand-blue);
+  --color-brand-hover: var(--brand-blue-hover);
+  --color-surface: var(--surface);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-work-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
-/* Custom scrollbar */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
+/* Custom scrollbar — refined for light theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -29,10 +51,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #CBD5E1;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94A3B8;
 }
