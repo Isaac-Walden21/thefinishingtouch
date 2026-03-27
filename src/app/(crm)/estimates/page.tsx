@@ -46,14 +46,14 @@ export default function EstimatesPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Estimates</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Estimates</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {estimates.length} estimate{estimates.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link
           href="/estimates/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
         >
           <Plus className="h-4 w-4" />
           New Estimate
@@ -69,7 +69,7 @@ export default function EstimatesPage() {
             placeholder="Search by customer or project type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#0d1526] pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function EstimatesPage() {
             onChange={(e) =>
               setStatusFilter(e.target.value as EstimateStatus | "")
             }
-            className="rounded-lg border border-slate-700/50 bg-[#0d1526] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
@@ -90,7 +90,7 @@ export default function EstimatesPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-slate-700/50 bg-[#0d1526] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             <option value="">All Project Types</option>
             {projectTypes.map((t) => (
@@ -103,10 +103,10 @@ export default function EstimatesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700/50 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
               <th className="px-6 py-4">Customer</th>
               <th className="px-6 py-4">Project Type</th>
               <th className="px-6 py-4">Status</th>
@@ -114,23 +114,23 @@ export default function EstimatesPage() {
               <th className="px-6 py-4">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody className="divide-y divide-slate-100">
             {estimates.map((est) => {
               const statusCfg = ESTIMATE_STATUS_CONFIG[est.status];
               return (
                 <tr
                   key={est.id}
-                  className="transition-colors hover:bg-slate-800/30"
+                  className="transition-colors hover:bg-slate-50"
                 >
                   <td className="px-6 py-4">
                     <Link
                       href={`/estimates/${est.id}`}
-                      className="text-sm font-medium text-slate-200 hover:text-white"
+                      className="text-sm font-medium text-slate-700 hover:text-[#0F172A]"
                     >
                       {est.customer_name}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  <td className="px-6 py-4 text-sm text-slate-500">
                     {est.project_type}
                   </td>
                   <td className="px-6 py-4">
@@ -140,10 +140,10 @@ export default function EstimatesPage() {
                       {statusCfg.label}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium text-slate-200">
+                  <td className="px-6 py-4 text-right text-sm font-medium text-slate-700">
                     {fmt.format(est.total)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  <td className="px-6 py-4 text-sm text-slate-500">
                     {new Date(est.created_at).toLocaleDateString()}
                   </td>
                 </tr>

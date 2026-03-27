@@ -34,14 +34,14 @@ export default function LeadsPage() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Lead Pipeline</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Lead Pipeline</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {leads.length} total leads &middot; Drag cards to update status
           </p>
         </div>
         <Link
           href="/customers/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
         >
           <Plus className="h-4 w-4" />
           New Lead
@@ -56,7 +56,7 @@ export default function LeadsPage() {
             placeholder="Search leads by name, project, or description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#111a2e] py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
       </div>

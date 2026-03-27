@@ -8,10 +8,10 @@ import { demoCustomers, demoEstimates } from "@/lib/demo-data";
 import type { InvoiceLineItem } from "@/lib/types";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
 const selectClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none";
-const labelClass = "block text-sm font-medium text-slate-300 mb-2";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none";
+const labelClass = "block text-sm font-medium text-slate-700 mb-2";
 
 const fmt = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -104,23 +104,23 @@ export default function NewInvoicePage() {
     <div className="p-8">
       <Link
         href="/invoices"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to invoices
       </Link>
 
       <div className="max-w-4xl">
-        <h1 className="text-2xl font-bold text-white mb-2">Create Invoice</h1>
-        <p className="text-sm text-slate-400 mb-8">
+        <h1 className="text-2xl font-bold text-[#0F172A] mb-2">Create Invoice</h1>
+        <p className="text-sm text-slate-500 mb-8">
           Create a new invoice for a customer. Link to an existing estimate to
           auto-populate line items.
         </p>
 
         <div className="space-y-8">
           {/* Customer & Estimate */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
               Customer & Estimate
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -168,13 +168,13 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Line Items */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">Line Items</h2>
+              <h2 className="text-lg font-semibold text-[#0F172A]">Line Items</h2>
               <button
                 type="button"
                 onClick={addLineItem}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Row
@@ -226,14 +226,14 @@ export default function NewInvoicePage() {
                       className={inputClass}
                     />
                   </div>
-                  <div className="col-span-2 text-right text-sm font-medium text-slate-200">
+                  <div className="col-span-2 text-right text-sm font-medium text-slate-700">
                     {fmt.format(li.total)}
                   </div>
                   <div className="col-span-1 flex justify-center">
                     <button
                       type="button"
                       onClick={() => removeLineItem(idx)}
-                      className="rounded p-1 text-slate-500 transition-colors hover:bg-red-500/20 hover:text-red-400"
+                      className="rounded p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -244,8 +244,8 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Tax & Totals */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
               Tax & Totals
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -259,23 +259,23 @@ export default function NewInvoicePage() {
                   placeholder="7"
                   className={inputClass}
                 />
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-400">
                   Indiana sales tax default: 7%
                 </p>
               </div>
               <div className="flex items-end">
-                <div className="w-full space-y-2 rounded-lg border border-slate-700/30 bg-[#0d1526] p-4">
+                <div className="w-full space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Subtotal</span>
-                    <span className="text-slate-200">{fmt.format(subtotal)}</span>
+                    <span className="text-slate-500">Subtotal</span>
+                    <span className="text-slate-700">{fmt.format(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Tax ({taxRate}%)</span>
-                    <span className="text-slate-200">{fmt.format(taxAmount)}</span>
+                    <span className="text-slate-500">Tax ({taxRate}%)</span>
+                    <span className="text-slate-700">{fmt.format(taxAmount)}</span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-700/50 pt-2 text-base font-bold">
-                    <span className="text-white">Total</span>
-                    <span className="text-emerald-400">{fmt.format(total)}</span>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold">
+                    <span className="text-[#0F172A]">Total</span>
+                    <span className="text-emerald-600">{fmt.format(total)}</span>
                   </div>
                 </div>
               </div>
@@ -283,8 +283,8 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Due Date & Notes */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
               Details
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -316,7 +316,7 @@ export default function NewInvoicePage() {
               type="button"
               onClick={() => handleSave(false)}
               disabled={saving || !customerId}
-              className="flex items-center gap-2 rounded-lg border border-slate-700/50 px-6 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               {saving ? "Saving..." : "Save as Draft"}
@@ -325,14 +325,14 @@ export default function NewInvoicePage() {
               type="button"
               onClick={() => handleSave(true)}
               disabled={saving || !customerId || !dueDate}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3] disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
               {saving ? "Sending..." : "Send to Customer"}
             </button>
             <Link
               href="/invoices"
-              className="rounded-lg border border-slate-700/50 px-6 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+              className="rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
             >
               Cancel
             </Link>

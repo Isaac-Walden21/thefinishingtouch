@@ -30,10 +30,10 @@ export default function CustomerDetailPage({
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-slate-400">Customer not found</p>
+          <p className="text-lg text-slate-500">Customer not found</p>
           <Link
             href="/customers"
-            className="mt-4 inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300"
+            className="mt-4 inline-flex items-center gap-2 text-sm text-[#0085FF] hover:text-[#0177E3]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to customers
@@ -47,7 +47,7 @@ export default function CustomerDetailPage({
     <div className="p-8">
       <Link
         href="/customers"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to customers
@@ -56,9 +56,9 @@ export default function CustomerDetailPage({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Customer Info Card */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0085FF] text-lg font-bold text-white">
                 {customer.name
                   .split(" ")
                   .filter((w) => w[0] === w[0].toUpperCase())
@@ -67,11 +67,11 @@ export default function CustomerDetailPage({
                   .join("")}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">
+                <h1 className="text-xl font-bold text-[#0F172A]">
                   {customer.name}
                 </h1>
                 {customer.service_type && (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     {customer.service_type}
                   </p>
                 )}
@@ -81,20 +81,20 @@ export default function CustomerDetailPage({
             <div className="space-y-4">
               {customer.phone && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-300">{customer.phone}</span>
+                  <Phone className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600">{customer.phone}</span>
                 </div>
               )}
               {customer.email && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-300">{customer.email}</span>
+                  <Mail className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600">{customer.email}</span>
                 </div>
               )}
               {customer.address && (
                 <div className="flex items-start gap-3 text-sm">
-                  <MapPin className="h-4 w-4 mt-0.5 text-slate-500" />
-                  <span className="text-slate-300">
+                  <MapPin className="h-4 w-4 mt-0.5 text-slate-400" />
+                  <span className="text-slate-600">
                     {customer.address}
                     <br />
                     {customer.city}, {customer.state} {customer.zip}
@@ -103,15 +103,15 @@ export default function CustomerDetailPage({
               )}
               {customer.source && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Tag className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-300">
+                  <Tag className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600">
                     Source: {customer.source}
                   </span>
                 </div>
               )}
               <div className="flex items-center gap-3 text-sm">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                <span className="text-slate-300">
+                <Calendar className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">
                   Customer since{" "}
                   {new Date(customer.created_at).toLocaleDateString("en-US", {
                     month: "short",
@@ -123,11 +123,11 @@ export default function CustomerDetailPage({
             </div>
 
             {customer.notes && (
-              <div className="mt-6 pt-4 border-t border-slate-700/50">
-                <h3 className="text-sm font-medium text-slate-400 mb-2">
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <h3 className="text-sm font-medium text-slate-500 mb-2">
                   Notes
                 </h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
+                <p className="text-sm text-slate-600 leading-relaxed">
                   {customer.notes}
                 </p>
               </div>
@@ -138,8 +138,8 @@ export default function CustomerDetailPage({
         {/* Leads + Activity */}
         <div className="lg:col-span-2 space-y-6">
           {/* Leads */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="mb-4 text-lg font-semibold text-white">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="mb-4 text-lg font-semibold text-[#0F172A]">
               Leads ({customerLeads.length})
             </h2>
             {customerLeads.length === 0 ? (
@@ -154,10 +154,10 @@ export default function CustomerDetailPage({
                     <Link
                       key={lead.id}
                       href={`/leads/${lead.id}`}
-                      className="flex items-center justify-between rounded-lg border border-slate-700/50 bg-[#0d1526] p-4 transition-colors hover:border-slate-600"
+                      className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors hover:border-[#0085FF]/30"
                     >
                       <div>
-                        <p className="text-sm font-medium text-slate-200">
+                        <p className="text-sm font-medium text-slate-700">
                           {lead.project_type}
                         </p>
                         {lead.project_description && (
@@ -168,7 +168,7 @@ export default function CustomerDetailPage({
                       </div>
                       <div className="flex items-center gap-4">
                         {lead.quoted_amount && (
-                          <span className="text-sm font-medium text-emerald-400">
+                          <span className="text-sm font-medium text-emerald-600">
                             ${lead.quoted_amount.toLocaleString()}
                           </span>
                         )}
@@ -186,8 +186,8 @@ export default function CustomerDetailPage({
           </div>
 
           {/* Activity */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="mb-6 text-lg font-semibold text-white">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="mb-6 text-lg font-semibold text-[#0F172A]">
               Activity History
             </h2>
             <ActivityTimeline activities={customerActivities} />

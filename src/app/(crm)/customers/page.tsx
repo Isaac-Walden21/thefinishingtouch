@@ -63,14 +63,14 @@ export default function CustomersPage() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Customers</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {demoCustomers.length} total customers
           </p>
         </div>
         <Link
           href="/customers/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
         >
           <Plus className="h-4 w-4" />
           Add Customer
@@ -85,7 +85,7 @@ export default function CustomersPage() {
             placeholder="Search by name, email, phone, or city..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#111a2e] py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
 
@@ -94,7 +94,7 @@ export default function CustomersPage() {
           <select
             value={serviceFilter}
             onChange={(e) => setServiceFilter(e.target.value)}
-            className="rounded-lg border border-slate-700/50 bg-[#111a2e] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             {serviceTypes.map((s) => (
               <option key={s} value={s}>
@@ -105,7 +105,7 @@ export default function CustomersPage() {
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="rounded-lg border border-slate-700/50 bg-[#111a2e] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             {sources.map((s) => (
               <option key={s} value={s}>
@@ -116,31 +116,31 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700/50">
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-slate-200">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Customer
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Contact
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Location
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Service
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Status
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                 Leads
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody className="divide-y divide-slate-100">
             {filtered.map((customer) => {
               const latestStatus = getLatestLeadStatus(customer.id);
               const statusConfig = latestStatus
@@ -149,12 +149,12 @@ export default function CustomersPage() {
               return (
                 <tr
                   key={customer.id}
-                  className="transition-colors hover:bg-slate-800/30"
+                  className="transition-colors hover:bg-slate-50"
                 >
                   <td className="px-6 py-4">
                     <Link
                       href={`/customers/${customer.id}`}
-                      className="text-sm font-medium text-blue-400 hover:text-blue-300"
+                      className="text-sm font-medium text-[#0085FF] hover:text-[#0177E3]"
                     >
                       {customer.name}
                     </Link>
@@ -167,13 +167,13 @@ export default function CustomersPage() {
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       {customer.phone && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
                           <Phone className="h-3 w-3" />
                           {customer.phone}
                         </div>
                       )}
                       {customer.email && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
                           <Mail className="h-3 w-3" />
                           {customer.email}
                         </div>
@@ -181,13 +181,13 @@ export default function CustomersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
                       <MapPin className="h-3 w-3" />
                       {customer.city}, {customer.state}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs text-slate-300">
+                    <span className="text-xs text-slate-600">
                       {customer.service_type}
                     </span>
                   </td>
@@ -201,7 +201,7 @@ export default function CustomersPage() {
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-slate-300">
+                    <span className="text-sm text-slate-600">
                       {getCustomerLeadCount(customer.id)}
                     </span>
                   </td>

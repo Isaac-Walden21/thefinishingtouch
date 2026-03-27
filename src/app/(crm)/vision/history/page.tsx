@@ -42,15 +42,15 @@ export default function VisionHistoryPage() {
     <div className="p-8">
       <Link
         href="/vision"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Vision Studio
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Vision History</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-2xl font-bold text-[#0F172A]">Vision History</h1>
+        <p className="mt-1 text-sm text-slate-500">
           Browse all past AI visualizations
         </p>
       </div>
@@ -64,7 +64,7 @@ export default function VisionHistoryPage() {
             placeholder="Search by customer or description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#0d1526] pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export default function VisionHistoryPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-slate-700/50 bg-[#0d1526] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             <option value="">All Project Types</option>
             {serviceTypes.map((t) => (
@@ -86,8 +86,8 @@ export default function VisionHistoryPage() {
 
       {/* Gallery */}
       {projects.length === 0 ? (
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-12 text-center">
-          <ImageIcon className="mx-auto h-12 w-12 text-slate-700 mb-3" />
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-12 text-center">
+          <ImageIcon className="mx-auto h-12 w-12 text-slate-300 mb-3" />
           <p className="text-sm text-slate-500">No visualizations found.</p>
         </div>
       ) : (
@@ -101,27 +101,27 @@ export default function VisionHistoryPage() {
             return (
               <div
                 key={proj.id}
-                className="rounded-xl border border-slate-700/50 bg-[#111a2e] overflow-hidden"
+                className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
               >
                 {/* Project Header */}
                 <button
                   onClick={() =>
                     setExpandedId(isExpanded ? null : proj.id)
                   }
-                  className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-slate-800/20"
+                  className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex items-center justify-center flex-shrink-0">
-                      <ImageIcon className="h-6 w-6 text-slate-600" />
+                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center flex-shrink-0">
+                      <ImageIcon className="h-6 w-6 text-slate-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-[#0F172A]">
                         {proj.service_type}
                       </h3>
-                      <p className="text-sm text-slate-400 mt-0.5">
+                      <p className="text-sm text-slate-500 mt-0.5">
                         {proj.description}
                       </p>
-                      <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500">
+                      <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-400">
                         {proj.customer_name && (
                           <span className="flex items-center gap-1">
                             <User className="h-3 w-3" />
@@ -141,58 +141,58 @@ export default function VisionHistoryPage() {
                     </div>
                   </div>
                   {isExpanded ? (
-                    <ChevronUp className="h-5 w-5 text-slate-500" />
+                    <ChevronUp className="h-5 w-5 text-slate-400" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 text-slate-500" />
+                    <ChevronDown className="h-5 w-5 text-slate-400" />
                   )}
                 </button>
 
                 {/* Expanded: Iterations */}
                 {isExpanded && (
-                  <div className="border-t border-slate-700/50 p-6">
+                  <div className="border-t border-slate-200 p-6">
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div>
                         <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">
                           Original Photo
                         </p>
-                        <div className="w-full rounded-lg bg-[#0d1526] aspect-[4/3] flex items-center justify-center">
-                          <ImageIcon className="h-8 w-8 text-slate-700" />
+                        <div className="w-full rounded-lg bg-slate-100 aspect-[4/3] flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-slate-400" />
                         </div>
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">
                           Latest Visualization
                         </p>
-                        <div className="w-full rounded-lg bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-slate-700/50 aspect-[4/3] flex items-center justify-center">
-                          <Sparkles className="h-8 w-8 text-blue-400/50" />
+                        <div className="w-full rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 border border-slate-200 aspect-[4/3] flex items-center justify-center">
+                          <Sparkles className="h-8 w-8 text-[#0085FF]/40" />
                         </div>
                       </div>
                     </div>
 
-                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                       All Iterations
                     </h4>
                     <div className="space-y-3">
                       {proj.iterations.map((iter, idx) => (
                         <div
                           key={iter.id}
-                          className="flex items-start gap-3 rounded-lg border border-slate-700/30 bg-[#0d1526] p-3"
+                          className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
                         >
-                          <div className="w-12 h-12 rounded bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs text-slate-500">
+                          <div className="w-12 h-12 rounded bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs text-slate-400">
                               #{idx + 1}
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
                             {iter.add_on && (
-                              <span className="inline-flex rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-medium text-blue-400 mb-1">
+                              <span className="inline-flex rounded-full bg-[#0085FF]/10 px-2 py-0.5 text-[10px] font-medium text-[#0085FF] mb-1">
                                 + {iter.add_on}
                               </span>
                             )}
-                            <p className="text-xs text-slate-400 line-clamp-2">
+                            <p className="text-xs text-slate-500 line-clamp-2">
                               {iter.prompt_used}
                             </p>
-                            <p className="text-[10px] text-slate-600 mt-1">
+                            <p className="text-[10px] text-slate-400 mt-1">
                               {new Date(iter.created_at).toLocaleString()}
                             </p>
                           </div>
@@ -205,7 +205,7 @@ export default function VisionHistoryPage() {
                       <div className="mt-4 flex gap-3">
                         <Link
                           href={`/customers/${customer.id}`}
-                          className="flex items-center gap-2 rounded-lg border border-slate-700/50 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                          className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
                         >
                           <User className="h-3 w-3" />
                           View Customer

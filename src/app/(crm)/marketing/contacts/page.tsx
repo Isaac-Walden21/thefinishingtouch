@@ -3,14 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Users,
   Search,
-  Tag,
   Upload,
   Filter,
   Mail,
-  X,
-  Plus,
 } from "lucide-react";
 import { demoMarketingContacts } from "@/lib/demo-data";
 
@@ -58,29 +54,29 @@ export default function MarketingContactsPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Marketing Contacts</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Marketing Contacts</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {demoMarketingContacts.length} contacts · {subscribedCount} subscribed
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-600">
+        <button className="flex items-center gap-2 rounded-lg bg-slate-100 border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200">
           <Upload className="h-4 w-4" />
           Import CSV
         </button>
       </div>
 
       {/* Sub-navigation */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-[#0d1526] p-1 w-fit">
-        <Link href="/marketing/contacts" className="rounded-md bg-blue-600/20 px-4 py-2 text-sm font-medium text-blue-400">
+      <div className="mb-6 flex gap-1 rounded-lg bg-slate-100 p-1 w-fit">
+        <Link href="/marketing/contacts" className="rounded-md bg-[#0085FF]/10 px-4 py-2 text-sm font-medium text-[#0085FF]">
           Contacts
         </Link>
-        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Templates
         </Link>
-        <Link href="/marketing/campaigns" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/campaigns" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Campaigns
         </Link>
-        <Link href="/marketing/automations" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/automations" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Automations
         </Link>
       </div>
@@ -94,21 +90,21 @@ export default function MarketingContactsPage() {
             placeholder="Search contacts..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#111a2e] pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
         <button
           onClick={() => setShowFilter(!showFilter)}
           className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
             selectedTags.length > 0
-              ? "border-blue-500 bg-blue-500/20 text-blue-400"
-              : "border-slate-700/50 bg-[#111a2e] text-slate-400 hover:text-slate-200"
+              ? "border-[#0085FF] bg-[#0085FF]/10 text-[#0085FF]"
+              : "border-slate-200 bg-white text-slate-500 hover:text-slate-700"
           }`}
         >
           <Filter className="h-4 w-4" />
           Filter by tag
           {selectedTags.length > 0 && (
-            <span className="rounded-full bg-blue-600 px-1.5 text-xs text-white">
+            <span className="rounded-full bg-[#0085FF] px-1.5 text-xs text-white">
               {selectedTags.length}
             </span>
           )}
@@ -117,13 +113,13 @@ export default function MarketingContactsPage() {
 
       {/* Tag filter panel */}
       {showFilter && (
-        <div className="mb-6 rounded-xl border border-slate-700/50 bg-[#111a2e] p-4">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-slate-300">Segment by Tags</p>
+            <p className="text-sm font-medium text-slate-700">Segment by Tags</p>
             {selectedTags.length > 0 && (
               <button
                 onClick={() => setSelectedTags([])}
-                className="text-xs text-slate-500 hover:text-slate-300"
+                className="text-xs text-slate-400 hover:text-slate-600"
               >
                 Clear all
               </button>
@@ -136,8 +132,8 @@ export default function MarketingContactsPage() {
                 onClick={() => toggleTag(tag)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedTags.includes(tag)
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                    ? "bg-[#0085FF] text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
                 }`}
               >
                 {tag}
@@ -148,10 +144,10 @@ export default function MarketingContactsPage() {
       )}
 
       {/* Contacts table */}
-      <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700/50">
+            <tr className="border-b border-slate-200">
               <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
                 Name
               </th>
@@ -166,14 +162,14 @@ export default function MarketingContactsPage() {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/50">
+          <tbody className="divide-y divide-slate-100">
             {filtered.map((contact) => (
-              <tr key={contact.id} className="hover:bg-[#0d1526] transition-colors">
+              <tr key={contact.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
-                  <p className="text-sm font-medium text-slate-200">{contact.name}</p>
+                  <p className="text-sm font-medium text-slate-700">{contact.name}</p>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Mail className="h-3.5 w-3.5" />
                     {contact.email}
                   </div>
@@ -183,7 +179,7 @@ export default function MarketingContactsPage() {
                     {contact.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400"
+                        className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500"
                       >
                         {tag}
                       </span>
@@ -192,11 +188,11 @@ export default function MarketingContactsPage() {
                 </td>
                 <td className="px-6 py-4">
                   {contact.subscribed ? (
-                    <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
                       Subscribed
                     </span>
                   ) : (
-                    <span className="rounded-full bg-slate-500/20 px-2.5 py-1 text-xs font-medium text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-400">
                       Unsubscribed
                     </span>
                   )}

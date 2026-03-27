@@ -19,10 +19,10 @@ import {
 } from "@/lib/types";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
 const selectClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none";
-const labelClass = "block text-sm font-medium text-slate-300 mb-2";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none";
+const labelClass = "block text-sm font-medium text-slate-700 mb-2";
 
 const fmt = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -124,25 +124,25 @@ export default function NewEstimatePage() {
     <div className="p-8">
       <Link
         href="/estimates"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to estimates
       </Link>
 
       <div className="max-w-4xl">
-        <h1 className="text-2xl font-bold text-white mb-2">
+        <h1 className="text-2xl font-bold text-[#0F172A] mb-2">
           Create New Estimate
         </h1>
-        <p className="text-sm text-slate-400 mb-8">
+        <p className="text-sm text-slate-500 mb-8">
           Fill in the project details and let AI generate a professional
           estimate.
         </p>
 
         <div className="space-y-8">
           {/* Project Type */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
               Project Details
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -205,7 +205,7 @@ export default function NewEstimatePage() {
                   )}
                   {sqft > 0 && (
                     <div className="flex items-end">
-                      <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 px-4 py-2.5 text-sm text-blue-400 font-medium">
+                      <div className="rounded-lg bg-[#0085FF]/10 border border-[#0085FF]/30 px-4 py-2.5 text-sm text-[#0085FF] font-medium">
                         {sqft.toLocaleString()} sq ft
                       </div>
                     </div>
@@ -230,8 +230,8 @@ export default function NewEstimatePage() {
 
           {/* Materials */}
           {projectType && materialOptions.length > 0 && (
-            <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-              <h2 className="text-lg font-semibold text-white mb-6">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
                 Materials & Finish
               </h2>
               <div className="flex flex-wrap gap-3">
@@ -242,8 +242,8 @@ export default function NewEstimatePage() {
                     onClick={() => toggleMaterial(mat)}
                     className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                       selectedMaterials.includes(mat)
-                        ? "border-blue-500 bg-blue-500/20 text-blue-400"
-                        : "border-slate-700/50 bg-[#0d1526] text-slate-400 hover:border-slate-600 hover:text-slate-200"
+                        ? "border-[#0085FF] bg-[#0085FF]/10 text-[#0085FF]"
+                        : "border-slate-200 bg-slate-50 text-slate-500 hover:border-[#0085FF]/30 hover:text-slate-700"
                     }`}
                   >
                     {mat}
@@ -255,8 +255,8 @@ export default function NewEstimatePage() {
 
           {/* Complexity & Options */}
           {projectType && (
-            <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-              <h2 className="text-lg font-semibold text-white mb-6">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
                 Complexity & Options
               </h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -273,11 +273,11 @@ export default function NewEstimatePage() {
                         className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors ${
                           complexity === level
                             ? level === "easy"
-                              ? "border-emerald-500 bg-emerald-500/20 text-emerald-400"
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-600"
                               : level === "moderate"
-                                ? "border-yellow-500 bg-yellow-500/20 text-yellow-400"
-                                : "border-red-500 bg-red-500/20 text-red-400"
-                            : "border-slate-700/50 bg-[#0d1526] text-slate-400 hover:border-slate-600"
+                                ? "border-amber-500 bg-amber-50 text-amber-600"
+                                : "border-red-500 bg-red-50 text-red-500"
+                            : "border-slate-200 bg-slate-50 text-slate-500 hover:border-[#0085FF]/30"
                         }`}
                       >
                         {level}
@@ -323,9 +323,9 @@ export default function NewEstimatePage() {
                         type="checkbox"
                         checked={opt.checked}
                         onChange={(e) => opt.onChange(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-600 bg-[#0d1526] text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-slate-300 bg-white text-[#0085FF] focus:ring-[#0085FF]"
                       />
-                      <span className="text-sm text-slate-300">
+                      <span className="text-sm text-slate-600">
                         {opt.label}
                       </span>
                     </label>
@@ -336,8 +336,8 @@ export default function NewEstimatePage() {
           )}
 
           {/* Customer & Notes */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-6">
               Customer & Notes
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -374,7 +374,7 @@ export default function NewEstimatePage() {
             type="button"
             disabled={!projectType || generating}
             onClick={handleGenerate}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#0085FF] to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -386,12 +386,12 @@ export default function NewEstimatePage() {
 
           {/* Generated Estimate Preview */}
           {generated && (
-            <div className="rounded-xl border border-blue-500/30 bg-[#111a2e] p-6 space-y-6">
+            <div className="rounded-xl border border-[#0085FF]/30 bg-white shadow-sm p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-[#0F172A]">
                   Generated Estimate
                 </h2>
-                <span className="text-sm text-slate-400">
+                <span className="text-sm text-slate-500">
                   Timeline: {generated.timeline}
                 </span>
               </div>
@@ -401,7 +401,7 @@ export default function NewEstimatePage() {
                 <button
                   type="button"
                   onClick={() => setShowLineItems(!showLineItems)}
-                  className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white mb-4"
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-[#0F172A] mb-4"
                 >
                   {showLineItems ? (
                     <ChevronUp className="h-4 w-4" />
@@ -412,10 +412,10 @@ export default function NewEstimatePage() {
                 </button>
 
                 {showLineItems && (
-                  <div className="rounded-lg border border-slate-700/50 overflow-hidden">
+                  <div className="rounded-lg border border-slate-200 overflow-hidden">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-slate-700/50 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+                        <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                           <th className="px-4 py-3">Description</th>
                           <th className="px-4 py-3">Category</th>
                           <th className="px-4 py-3 text-right">Qty</th>
@@ -423,32 +423,32 @@ export default function NewEstimatePage() {
                           <th className="px-4 py-3 text-right">Total</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700/30">
+                      <tbody className="divide-y divide-slate-100">
                         {generated.line_items.map((li) => (
                           <tr key={li.id}>
-                            <td className="px-4 py-3 text-sm text-slate-200">
+                            <td className="px-4 py-3 text-sm text-slate-700">
                               {li.description}
                             </td>
                             <td className="px-4 py-3">
                               <span
                                 className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                                   li.category === "material"
-                                    ? "text-blue-400 bg-blue-500/20"
+                                    ? "text-[#0085FF] bg-[#0085FF]/10"
                                     : li.category === "labor"
-                                      ? "text-orange-400 bg-orange-500/20"
-                                      : "text-purple-400 bg-purple-500/20"
+                                      ? "text-orange-600 bg-orange-50"
+                                      : "text-purple-600 bg-purple-50"
                                 }`}
                               >
                                 {li.category}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right text-sm text-slate-400">
+                            <td className="px-4 py-3 text-right text-sm text-slate-500">
                               {li.quantity} {li.unit}
                             </td>
-                            <td className="px-4 py-3 text-right text-sm text-slate-400">
+                            <td className="px-4 py-3 text-right text-sm text-slate-500">
                               {fmt.format(li.unit_cost)}
                             </td>
-                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-200">
+                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-700">
                               {fmt.format(li.total)}
                             </td>
                           </tr>
@@ -463,20 +463,20 @@ export default function NewEstimatePage() {
               <div className="flex justify-end">
                 <div className="w-72 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Subtotal</span>
-                    <span className="text-slate-200">
+                    <span className="text-slate-500">Subtotal</span>
+                    <span className="text-slate-700">
                       {fmt.format(generated.subtotal)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Margin (25%)</span>
-                    <span className="text-slate-200">
+                    <span className="text-slate-500">Margin (25%)</span>
+                    <span className="text-slate-700">
                       {fmt.format(generated.margin)}
                     </span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-700/50 pt-2 text-base font-semibold">
-                    <span className="text-white">Total</span>
-                    <span className="text-emerald-400">
+                  <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-semibold">
+                    <span className="text-[#0F172A]">Total</span>
+                    <span className="text-emerald-600">
                       {fmt.format(generated.total)}
                     </span>
                   </div>
@@ -489,7 +489,7 @@ export default function NewEstimatePage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3] disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
                   {saving
@@ -498,7 +498,7 @@ export default function NewEstimatePage() {
                 </button>
                 <Link
                   href="/estimates"
-                  className="rounded-lg border border-slate-700/50 px-6 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                  className="rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Cancel
                 </Link>

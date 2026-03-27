@@ -10,9 +10,7 @@ import {
   MousePointerClick,
   UserMinus,
   Users,
-  Clock,
   ChevronDown,
-  X,
 } from "lucide-react";
 import { demoCampaigns, demoEmailTemplates } from "@/lib/demo-data";
 import { CAMPAIGN_STATUS_CONFIG } from "@/lib/types";
@@ -41,29 +39,29 @@ export default function MarketingCampaignsPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Campaigns</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Campaigns</h1>
+          <p className="mt-1 text-sm text-slate-500">
             Create and manage email campaigns to your contact segments.
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+        <button className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]">
           <Plus className="h-4 w-4" />
           New Campaign
         </button>
       </div>
 
       {/* Sub-navigation */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-[#0d1526] p-1 w-fit">
-        <Link href="/marketing/contacts" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+      <div className="mb-6 flex gap-1 rounded-lg bg-slate-100 p-1 w-fit">
+        <Link href="/marketing/contacts" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Contacts
         </Link>
-        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Templates
         </Link>
-        <Link href="/marketing/campaigns" className="rounded-md bg-blue-600/20 px-4 py-2 text-sm font-medium text-blue-400">
+        <Link href="/marketing/campaigns" className="rounded-md bg-[#0085FF]/10 px-4 py-2 text-sm font-medium text-[#0085FF]">
           Campaigns
         </Link>
-        <Link href="/marketing/automations" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/automations" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Automations
         </Link>
       </div>
@@ -76,8 +74,8 @@ export default function MarketingCampaignsPage() {
             onClick={() => setFilter(s)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               filter === s
-                ? "bg-blue-600/20 text-blue-400"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[#0085FF]/10 text-[#0085FF]"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
             {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -93,12 +91,12 @@ export default function MarketingCampaignsPage() {
           return (
             <div
               key={campaign.id}
-              className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6"
+              className="rounded-xl border border-slate-200 bg-white shadow-sm p-6"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-sm font-semibold text-white">
+                    <h3 className="text-sm font-semibold text-[#0F172A]">
                       {campaign.name}
                     </h3>
                     <span
@@ -107,7 +105,7 @@ export default function MarketingCampaignsPage() {
                       {statusConfig.label}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-400">
                     Template: {template?.name ?? "Unknown"} · Audience:{" "}
                     {campaign.segment_tags.length > 0
                       ? campaign.segment_tags.join(", ")
@@ -116,14 +114,14 @@ export default function MarketingCampaignsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {campaign.status === "draft" && (
-                    <button className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                    <button className="flex items-center gap-1 rounded-lg bg-[#0085FF] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0177E3]">
                       <Send className="h-3 w-3" />
                       Send Test
                     </button>
                   )}
                   <button
                     onClick={() => setShowDetail(showDetail === campaign.id ? null : campaign.id)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200"
+                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                   >
                     <ChevronDown className={`h-4 w-4 transition-transform ${showDetail === campaign.id ? "rotate-180" : ""}`} />
                   </button>
@@ -131,7 +129,7 @@ export default function MarketingCampaignsPage() {
               </div>
 
               {/* Stats row */}
-              <div className="flex items-center gap-6 text-xs text-slate-500">
+              <div className="flex items-center gap-6 text-xs text-slate-400">
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5" />
                   {campaign.recipients_count} recipients
@@ -142,7 +140,7 @@ export default function MarketingCampaignsPage() {
                       <Eye className="h-3.5 w-3.5" />
                       {campaign.opens} opens
                       {campaign.recipients_count > 0 && (
-                        <span className="text-slate-600">
+                        <span className="text-slate-300">
                           ({Math.round((campaign.opens / campaign.recipients_count) * 100)}%)
                         </span>
                       )}
@@ -169,20 +167,20 @@ export default function MarketingCampaignsPage() {
 
               {/* Expanded detail */}
               {showDetail === campaign.id && (
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <div className="mt-4 pt-4 border-t border-slate-200">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-slate-500 mb-1">Open Rate</p>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-slate-700/50">
+                        <div className="flex-1 h-2 rounded-full bg-slate-200">
                           <div
-                            className="h-2 rounded-full bg-blue-500"
+                            className="h-2 rounded-full bg-[#0085FF]"
                             style={{
                               width: `${campaign.recipients_count > 0 ? (campaign.opens / campaign.recipients_count) * 100 : 0}%`,
                             }}
                           />
                         </div>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           {campaign.recipients_count > 0
                             ? Math.round((campaign.opens / campaign.recipients_count) * 100)
                             : 0}%
@@ -192,7 +190,7 @@ export default function MarketingCampaignsPage() {
                     <div>
                       <p className="text-xs text-slate-500 mb-1">Click Rate</p>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-slate-700/50">
+                        <div className="flex-1 h-2 rounded-full bg-slate-200">
                           <div
                             className="h-2 rounded-full bg-emerald-500"
                             style={{
@@ -200,7 +198,7 @@ export default function MarketingCampaignsPage() {
                             }}
                           />
                         </div>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           {campaign.recipients_count > 0
                             ? Math.round((campaign.clicks / campaign.recipients_count) * 100)
                             : 0}%

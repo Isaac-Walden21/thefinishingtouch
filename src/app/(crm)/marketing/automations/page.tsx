@@ -33,25 +33,25 @@ export default function MarketingAutomationsPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Automations</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Automations</h1>
+          <p className="mt-1 text-sm text-slate-500">
             Drip sequences that run automatically based on CRM triggers.
           </p>
         </div>
       </div>
 
       {/* Sub-navigation */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-[#0d1526] p-1 w-fit">
-        <Link href="/marketing/contacts" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+      <div className="mb-6 flex gap-1 rounded-lg bg-slate-100 p-1 w-fit">
+        <Link href="/marketing/contacts" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Contacts
         </Link>
-        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/templates" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Templates
         </Link>
-        <Link href="/marketing/campaigns" className="rounded-md px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200">
+        <Link href="/marketing/campaigns" className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
           Campaigns
         </Link>
-        <Link href="/marketing/automations" className="rounded-md bg-blue-600/20 px-4 py-2 text-sm font-medium text-blue-400">
+        <Link href="/marketing/automations" className="rounded-md bg-[#0085FF]/10 px-4 py-2 text-sm font-medium text-[#0085FF]">
           Automations
         </Link>
       </div>
@@ -68,16 +68,16 @@ export default function MarketingAutomationsPage() {
           return (
             <div
               key={automation.id}
-              className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6"
+              className="rounded-xl border border-slate-200 bg-white shadow-sm p-6"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg p-2.5 bg-purple-500/20">
-                    <Workflow className="h-5 w-5 text-purple-400" />
+                  <div className="rounded-lg p-2.5 bg-purple-50">
+                    <Workflow className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-[#0F172A]">
                         {automation.name}
                       </h3>
                       <span
@@ -86,7 +86,7 @@ export default function MarketingAutomationsPage() {
                         {statusConfig.label}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {automation.description}
                     </p>
                   </div>
@@ -96,8 +96,8 @@ export default function MarketingAutomationsPage() {
                     onClick={() => toggleStatus(automation.id)}
                     className={`rounded-lg p-2 transition-colors ${
                       currentStatus === "active"
-                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                        : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"
+                        ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                        : "bg-slate-100 text-slate-400 hover:bg-slate-200"
                     }`}
                   >
                     {currentStatus === "active" ? (
@@ -110,7 +110,7 @@ export default function MarketingAutomationsPage() {
                     onClick={() =>
                       setExpandedId(isExpanded ? null : automation.id)
                     }
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200"
+                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                   >
                     <ChevronDown
                       className={`h-4 w-4 transition-transform ${
@@ -122,7 +122,7 @@ export default function MarketingAutomationsPage() {
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-6 text-xs text-slate-500 mb-2">
+              <div className="flex items-center gap-6 text-xs text-slate-400 mb-2">
                 <div className="flex items-center gap-1.5">
                   <Zap className="h-3.5 w-3.5" />
                   Trigger: {automation.trigger}
@@ -143,27 +143,27 @@ export default function MarketingAutomationsPage() {
 
               {/* Expanded: email sequence */}
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
-                  <p className="text-xs font-medium text-slate-400 mb-3 uppercase">
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <p className="text-xs font-medium text-slate-500 mb-3 uppercase">
                     Email Sequence
                   </p>
                   <div className="space-y-3">
                     {automation.emails.map((email, i) => (
                       <div key={email.id} className="flex gap-4">
                         <div className="flex flex-col items-center">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-400">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0085FF]/10 text-xs font-bold text-[#0085FF]">
                             {i + 1}
                           </div>
                           {i < automation.emails.length - 1 && (
-                            <div className="w-px flex-1 bg-slate-700/50 my-1" />
+                            <div className="w-px flex-1 bg-slate-200 my-1" />
                           )}
                         </div>
-                        <div className="flex-1 rounded-lg border border-slate-700/50 bg-[#0d1526] p-4">
+                        <div className="flex-1 rounded-lg border border-slate-200 bg-slate-50 p-4">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-medium text-slate-200">
+                            <p className="text-sm font-medium text-slate-700">
                               {email.subject}
                             </p>
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <div className="flex items-center gap-1 text-xs text-slate-400">
                               <Clock className="h-3 w-3" />
                               {email.delay_days === 0
                                 ? "Immediately"

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Search, Filter, DollarSign, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Search, Filter, DollarSign, AlertTriangle } from "lucide-react";
 import { demoInvoices, demoCustomers, demoPayments } from "@/lib/demo-data";
 import { INVOICE_STATUS_CONFIG } from "@/lib/types";
 import type { InvoiceStatus } from "@/lib/types";
@@ -56,14 +56,14 @@ export default function InvoicesPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Invoices</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Invoices</h1>
+          <p className="mt-1 text-sm text-slate-500">
             {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link
           href="/invoices/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
         >
           <Plus className="h-4 w-4" />
           New Invoice
@@ -72,36 +72,36 @@ export default function InvoicesPage() {
 
       {/* Quick Stats */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-5">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/20">
-              <DollarSign className="h-5 w-5 text-yellow-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+              <DollarSign className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-400">Total Outstanding</p>
-              <p className="text-lg font-bold text-white">{fmt.format(totalOutstanding)}</p>
+              <p className="text-xs text-slate-500">Total Outstanding</p>
+              <p className="text-lg font-bold text-[#0F172A]">{fmt.format(totalOutstanding)}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-5">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20">
-              <DollarSign className="h-5 w-5 text-emerald-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+              <DollarSign className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-400">Paid This Month</p>
-              <p className="text-lg font-bold text-white">{fmt.format(totalPaidThisMonth)}</p>
+              <p className="text-xs text-slate-500">Paid This Month</p>
+              <p className="text-lg font-bold text-[#0F172A]">{fmt.format(totalPaidThisMonth)}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-5">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/20">
-              <AlertTriangle className="h-5 w-5 text-red-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
             </div>
             <div>
-              <p className="text-xs text-slate-400">Overdue</p>
-              <p className="text-lg font-bold text-white">{overdueCount}</p>
+              <p className="text-xs text-slate-500">Overdue</p>
+              <p className="text-lg font-bold text-[#0F172A]">{overdueCount}</p>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function InvoicesPage() {
             placeholder="Search by customer or invoice number..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/50 bg-[#0d1526] pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export default function InvoicesPage() {
             onChange={(e) =>
               setStatusFilter(e.target.value as InvoiceStatus | "")
             }
-            className="rounded-lg border border-slate-700/50 bg-[#0d1526] px-3 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
@@ -141,10 +141,10 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700/50 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
               <th className="px-6 py-4">Invoice #</th>
               <th className="px-6 py-4">Customer</th>
               <th className="px-6 py-4 text-right">Amount</th>
@@ -153,26 +153,26 @@ export default function InvoicesPage() {
               <th className="px-6 py-4">Due Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody className="divide-y divide-slate-100">
             {invoices.map((inv) => {
               const statusCfg = INVOICE_STATUS_CONFIG[inv.status];
               return (
                 <tr
                   key={inv.id}
-                  className="transition-colors hover:bg-slate-800/30"
+                  className="transition-colors hover:bg-slate-50"
                 >
                   <td className="px-6 py-4">
                     <Link
                       href={`/invoices/${inv.id}`}
-                      className="text-sm font-medium text-blue-400 hover:text-blue-300"
+                      className="text-sm font-medium text-[#0085FF] hover:text-[#0177E3]"
                     >
                       {inv.invoice_number}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-200">
+                  <td className="px-6 py-4 text-sm text-slate-700">
                     {inv.customer?.name ?? "Unknown"}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium text-slate-200">
+                  <td className="px-6 py-4 text-right text-sm font-medium text-slate-700">
                     {fmt.format(inv.total)}
                   </td>
                   <td className="px-6 py-4">
@@ -182,12 +182,12 @@ export default function InvoicesPage() {
                       {statusCfg.label}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  <td className="px-6 py-4 text-sm text-slate-500">
                     {inv.sent_at
                       ? new Date(inv.sent_at).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  <td className="px-6 py-4 text-sm text-slate-500">
                     {new Date(inv.due_date).toLocaleDateString()}
                   </td>
                 </tr>

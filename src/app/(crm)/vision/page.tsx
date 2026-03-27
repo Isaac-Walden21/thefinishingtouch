@@ -17,9 +17,9 @@ import { demoCustomers, demoVisionProjects } from "@/lib/demo-data";
 import { PROJECT_TYPES } from "@/lib/types";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
 const selectClass =
-  "w-full rounded-lg border border-slate-700/50 bg-[#0d1526] px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none";
 
 interface VisionResult {
   image_url: string | null;
@@ -125,16 +125,16 @@ export default function VisionStudioPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-[#0F172A]">
             AI Vision Studio
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-500">
             Upload a photo and visualize the finished project with AI
           </p>
         </div>
         <Link
           href="/vision/history"
-          className="flex items-center gap-2 rounded-lg border border-slate-700/50 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+          className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
         >
           <History className="h-4 w-4" />
           View History
@@ -145,8 +145,8 @@ export default function VisionStudioPage() {
         {/* Left: Upload & Controls */}
         <div className="space-y-6">
           {/* Upload Zone */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
               Customer Photo
             </h2>
 
@@ -158,15 +158,15 @@ export default function VisionStudioPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 cursor-pointer transition-colors ${
                   isDragging
-                    ? "border-blue-500 bg-blue-500/10"
-                    : "border-slate-700/50 bg-[#0d1526] hover:border-slate-600"
+                    ? "border-[#0085FF] bg-[#0085FF]/5"
+                    : "border-slate-200 bg-slate-50 hover:border-[#0085FF]/30"
                 }`}
               >
-                <Upload className="h-10 w-10 text-slate-500 mb-4" />
-                <p className="text-sm font-medium text-slate-300 mb-1">
+                <Upload className="h-10 w-10 text-slate-400 mb-4" />
+                <p className="text-sm font-medium text-slate-600 mb-1">
                   Drag & drop a photo here
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-400">
                   or click to browse files
                 </p>
                 <input
@@ -198,9 +198,9 @@ export default function VisionStudioPage() {
           </div>
 
           {/* Controls */}
-          <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6 space-y-4">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Service Type *
               </label>
               <select
@@ -218,7 +218,7 @@ export default function VisionStudioPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 What do you want done? *
               </label>
               <textarea
@@ -231,7 +231,7 @@ export default function VisionStudioPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Link to Customer (optional)
               </label>
               <select
@@ -251,7 +251,7 @@ export default function VisionStudioPage() {
             <button
               onClick={() => handleGenerate(null)}
               disabled={!serviceType || !description || generating}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0085FF] to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {generating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -266,8 +266,8 @@ export default function VisionStudioPage() {
         {/* Right: Results */}
         <div className="space-y-6">
           {!hasResult ? (
-            <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-12 flex flex-col items-center justify-center min-h-[400px]">
-              <Camera className="h-16 w-16 text-slate-700 mb-4" />
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-12 flex flex-col items-center justify-center min-h-[400px]">
+              <Camera className="h-16 w-16 text-slate-300 mb-4" />
               <p className="text-sm text-slate-500 text-center max-w-xs">
                 Upload a photo, choose a service type, and describe what you
                 want. AI will generate a photorealistic visualization.
@@ -276,13 +276,13 @@ export default function VisionStudioPage() {
           ) : (
             <>
               {/* Before / After */}
-              <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-                <h2 className="text-lg font-semibold text-white mb-4">
+              <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+                <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
                   Visualization Result
                 </h2>
 
                 {result.demo_mode && result.message && (
-                  <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-400">
+                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-600">
                     {result.message}
                   </div>
                 )}
@@ -299,8 +299,8 @@ export default function VisionStudioPage() {
                         className="w-full rounded-lg object-cover aspect-[4/3]"
                       />
                     ) : (
-                      <div className="w-full rounded-lg bg-[#0d1526] aspect-[4/3] flex items-center justify-center">
-                        <ImageIcon className="h-8 w-8 text-slate-700" />
+                      <div className="w-full rounded-lg bg-slate-100 aspect-[4/3] flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-slate-400" />
                       </div>
                     )}
                   </div>
@@ -315,8 +315,8 @@ export default function VisionStudioPage() {
                         className="w-full rounded-lg object-cover aspect-[4/3]"
                       />
                     ) : (
-                      <div className="w-full rounded-lg bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-slate-700/50 aspect-[4/3] flex flex-col items-center justify-center">
-                        <Sparkles className="h-8 w-8 text-blue-400/50 mb-2" />
+                      <div className="w-full rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 border border-slate-200 aspect-[4/3] flex flex-col items-center justify-center">
+                        <Sparkles className="h-8 w-8 text-[#0085FF]/40 mb-2" />
                         <p className="text-xs text-slate-500 text-center px-4">
                           Image generation requires GEMINI_API_KEY
                         </p>
@@ -325,11 +325,11 @@ export default function VisionStudioPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-[#0d1526] p-3">
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
                   <p className="text-xs text-slate-500 mb-1">
                     AI-Optimized Prompt:
                   </p>
-                  <p className="text-xs text-slate-400 italic">
+                  <p className="text-xs text-slate-600 italic">
                     {iterations[selectedIteration]?.prompt_used ||
                       result.prompt_used}
                   </p>
@@ -338,8 +338,8 @@ export default function VisionStudioPage() {
 
               {/* Iterations Gallery */}
               {iterations.length > 1 && (
-                <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-                  <h3 className="text-sm font-semibold text-white mb-3">
+                <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+                  <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
                     Iterations ({iterations.length})
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2">
@@ -349,11 +349,11 @@ export default function VisionStudioPage() {
                         onClick={() => setSelectedIteration(idx)}
                         className={`flex-shrink-0 rounded-lg border-2 overflow-hidden transition-colors ${
                           selectedIteration === idx
-                            ? "border-blue-500"
-                            : "border-slate-700/50 hover:border-slate-600"
+                            ? "border-[#0085FF]"
+                            : "border-slate-200 hover:border-[#0085FF]/30"
                         }`}
                       >
-                        <div className="w-20 h-16 bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex items-center justify-center">
+                        <div className="w-20 h-16 bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center">
                           {iter.image_url ? (
                             <img
                               src={iter.image_url}
@@ -361,13 +361,13 @@ export default function VisionStudioPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-slate-400">
                               #{idx + 1}
                             </span>
                           )}
                         </div>
                         {iter.add_on && (
-                          <p className="px-1.5 py-1 text-[10px] text-slate-400 truncate max-w-20">
+                          <p className="px-1.5 py-1 text-[10px] text-slate-500 truncate max-w-20">
                             + {iter.add_on.split(" ").slice(0, 2).join(" ")}
                           </p>
                         )}
@@ -379,8 +379,8 @@ export default function VisionStudioPage() {
 
               {/* Add-On Suggestions */}
               {result.suggested_add_ons.length > 0 && (
-                <div className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-6">
-                  <h3 className="text-sm font-semibold text-white mb-3">
+                <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+                  <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
                     Want to see more?
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -389,7 +389,7 @@ export default function VisionStudioPage() {
                         key={addOn}
                         onClick={() => handleGenerate(addOn)}
                         disabled={generating}
-                        className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-[#0d1526] px-3 py-2 text-sm text-slate-300 transition-colors hover:border-blue-500/50 hover:text-blue-400 disabled:opacity-50"
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 transition-colors hover:border-[#0085FF]/30 hover:text-[#0085FF] disabled:opacity-50"
                       >
                         <Plus className="h-3 w-3" />
                         {addOn.charAt(0).toUpperCase() + addOn.slice(1)}
@@ -401,11 +401,11 @@ export default function VisionStudioPage() {
 
               {/* Actions */}
               <div className="flex gap-3">
-                <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+                <button className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]">
                   <User className="h-4 w-4" />
                   Save to Customer
                 </button>
-                <button className="flex items-center gap-2 rounded-lg border border-slate-700/50 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800">
+                <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
                   Share with Customer
                 </button>
               </div>
@@ -417,21 +417,21 @@ export default function VisionStudioPage() {
       {/* Recent Vision Projects */}
       {demoVisionProjects.length > 0 && !hasResult && (
         <div className="mt-12">
-          <h2 className="text-lg font-semibold text-white mb-4">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
             Recent Visualizations
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {demoVisionProjects.map((proj) => (
               <div
                 key={proj.id}
-                className="rounded-xl border border-slate-700/50 bg-[#111a2e] p-4 transition-colors hover:border-slate-600"
+                className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 transition-colors hover:border-[#0085FF]/30"
               >
                 <div className="flex gap-3 mb-3">
-                  <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="h-5 w-5 text-slate-600" />
+                  <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="h-5 w-5 text-slate-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-200 truncate">
+                    <p className="text-sm font-medium text-slate-700 truncate">
                       {proj.service_type}
                     </p>
                     <p className="text-xs text-slate-500 truncate">
@@ -439,10 +439,10 @@ export default function VisionStudioPage() {
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 line-clamp-2 mb-2">
+                <p className="text-xs text-slate-500 line-clamp-2 mb-2">
                   {proj.description}
                 </p>
-                <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>
                     {proj.iterations.length} iteration
                     {proj.iterations.length !== 1 ? "s" : ""}
