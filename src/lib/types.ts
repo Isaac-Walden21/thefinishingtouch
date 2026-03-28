@@ -527,6 +527,69 @@ export const AUTOMATION_STATUS_CONFIG: Record<
   draft: { label: "Draft", color: "text-slate-400", bgColor: "bg-slate-500/20" },
 };
 
+// ── Module 7: Job Walk Intake ──
+
+export type JobWalkStatus = "draft" | "estimated" | "sent" | "converted";
+
+export const JOB_WALK_STATUS_CONFIG: Record<
+  JobWalkStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  draft: { label: "Draft", color: "text-slate-400", bgColor: "bg-slate-500/20" },
+  estimated: { label: "Estimated", color: "text-blue-400", bgColor: "bg-blue-500/20" },
+  sent: { label: "Sent", color: "text-emerald-400", bgColor: "bg-emerald-500/20" },
+  converted: { label: "Converted", color: "text-purple-400", bgColor: "bg-purple-500/20" },
+};
+
+export interface JobWalkPhoto {
+  id: string;
+  storage_path: string;
+  label: string;
+  uploaded_at: string;
+}
+
+export interface AIFlag {
+  id: string;
+  type: "warning" | "suggestion" | "info";
+  message: string;
+  action: string | null;
+  dismissed: boolean;
+}
+
+export interface JobWalk {
+  id: string;
+  customer_id: string | null;
+  customer_name: string;
+  lead_id: string | null;
+  estimate_id: string | null;
+  project_type: string;
+  dimensions: {
+    length?: number;
+    width?: number;
+    depth?: number;
+    height?: number;
+    square_footage?: number;
+    linear_feet?: number;
+  };
+  materials: string[];
+  color_stain: string;
+  complexity: "easy" | "moderate" | "difficult";
+  options: {
+    demolition: boolean;
+    grading: boolean;
+    sealing: boolean;
+  };
+  photos: JobWalkPhoto[];
+  notes: string;
+  ai_flags: AIFlag[];
+  status: JobWalkStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+  estimate?: Estimate;
+}
+
 // ── Module 3: Vision Studio ──
 
 export interface VisionIteration {

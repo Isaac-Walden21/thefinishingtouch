@@ -169,3 +169,46 @@ CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
 CREATE TRIGGER invoices_updated_at
   BEFORE UPDATE ON invoices
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ── Module 7: Job Walk Intake ──
+
+CREATE TYPE job_walk_status AS ENUM (
+  'draft',
+  'estimated',
+  'sent',
+  'converted'
+);
+
+-- Job Walks
+CREATE TABLE job_walks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+  estimate_id UUID,
+  project_type TEXT NOT NULL,
+  dimensions JSONB NOT NULL DEFAULT '{}'::jsonb,
+  materials TEXT[] NOT NULL DEFAULT '{}',
+  color_stain TEXT,
+  complexity TEXT NOT NULL DEFAULT 'moderate',
+  options JSONB NOT NULL DEFAULT '{"demolition":false,"grading":false,"sealing":false}'::jsonb,
+  photos JSONB NOT NULL DEFAULT '[]'::jsonb,
+  notes TEXT,
+  ai_flags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  status job_walk_status NOT NULL DEFAULT 'draft',
+  created_by UUID REFERENCES team_members(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX idx_job_walks_customer_id ON job_walks(customer_id);
+CREATE INDEX idx_job_walks_status ON job_walks(status);
+CREATE INDEX idx_job_walks_created_by ON job_walks(created_by);
+
+-- Trigger
+CREATE TRIGGER job_walks_updated_at
+  BEFORE UPDATE ON job_walks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Storage bucket for job walk photos (run via Supabase dashboard or API)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('job-walk-photos', 'job-walk-photos', false);

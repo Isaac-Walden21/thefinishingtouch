@@ -14,12 +14,14 @@ import {
   Bot,
   Megaphone,
   Calendar,
+  HardHat,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: GitPullRequestArrow },
   { href: "/customers", label: "Customers", icon: Users },
+  { href: "/estimates/job-walk", label: "Job Walk", icon: HardHat },
   { href: "/estimates", label: "Estimates", icon: Calculator },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: Calendar },

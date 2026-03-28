@@ -15,6 +15,7 @@ import type {
   Automation,
   AvailabilityRule,
   CalendarEvent,
+  JobWalk,
 } from "./types";
 
 export const demoTeam: TeamMember[] = [
@@ -1703,5 +1704,103 @@ export const demoCalendarEvents: CalendarEvent[] = [
     lead_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+  },
+];
+
+// ── Job Walks ──
+
+export const demoJobWalks: JobWalk[] = [
+  {
+    id: "jw-1",
+    customer_id: "cust-1",
+    customer_name: "Sarah Mitchell",
+    lead_id: "lead-1",
+    estimate_id: "est-1",
+    project_type: "Stamped Concrete",
+    dimensions: {
+      length: 20,
+      width: 16,
+      depth: 4,
+      square_footage: 320,
+    },
+    materials: ["Ashlar Slate"],
+    color_stain: "Desert Tan with Dark Walnut Release",
+    complexity: "moderate",
+    options: { demolition: false, grading: true, sealing: true },
+    photos: [
+      {
+        id: "ph-1",
+        storage_path: "/job-walk-photos/jw-1/backyard-overview.jpg",
+        label: "Backyard overview",
+        uploaded_at: "2025-03-20T14:30:00Z",
+      },
+    ],
+    notes: "Customer wants patio to extend from back door to edge of fire pit area. Slight grade — needs leveling.",
+    ai_flags: [
+      {
+        id: "flag-1",
+        type: "suggestion",
+        message: "Consider adding sealing — extends lifespan 3-5 years",
+        action: "add_sealing",
+        dismissed: true,
+      },
+      {
+        id: "flag-2",
+        type: "info",
+        message: "Grading detected from photo — grading option already selected",
+        action: null,
+        dismissed: false,
+      },
+    ],
+    status: "estimated",
+    created_by: "tm-1",
+    created_at: "2025-03-20T14:00:00Z",
+    updated_at: "2025-03-20T15:30:00Z",
+  },
+  {
+    id: "jw-2",
+    customer_id: "cust-3",
+    customer_name: "Tom Richardson",
+    lead_id: "lead-3",
+    estimate_id: null,
+    project_type: "Concrete Driveway",
+    dimensions: {
+      length: 60,
+      width: 12,
+      depth: 5,
+      square_footage: 720,
+    },
+    materials: ["Broom Finish"],
+    color_stain: "",
+    complexity: "difficult",
+    options: { demolition: true, grading: true, sealing: false },
+    photos: [
+      {
+        id: "ph-2",
+        storage_path: "/job-walk-photos/jw-2/existing-driveway.jpg",
+        label: "Existing cracked driveway",
+        uploaded_at: "2025-03-22T10:00:00Z",
+      },
+      {
+        id: "ph-3",
+        storage_path: "/job-walk-photos/jw-2/grade-slope.jpg",
+        label: "Grade slope toward garage",
+        uploaded_at: "2025-03-22T10:02:00Z",
+      },
+    ],
+    notes: "Existing driveway is badly cracked, needs full tear-out. Steep grade toward garage — drainage matters.",
+    ai_flags: [
+      {
+        id: "flag-3",
+        type: "warning",
+        message: "720 sq ft driveway with demolition — verify equipment access for skid steer",
+        action: null,
+        dismissed: false,
+      },
+    ],
+    status: "draft",
+    created_by: "tm-1",
+    created_at: "2025-03-22T09:45:00Z",
+    updated_at: "2025-03-22T09:45:00Z",
   },
 ];

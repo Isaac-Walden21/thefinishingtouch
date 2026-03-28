@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, HardHat } from "lucide-react";
 import { demoEstimates } from "@/lib/demo-data";
 import { demoCustomers } from "@/lib/demo-data";
 import { ESTIMATE_STATUS_CONFIG } from "@/lib/types";
@@ -51,13 +51,22 @@ export default function EstimatesPage() {
             {estimates.length} estimate{estimates.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link
-          href="/estimates/new"
-          className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
-        >
-          <Plus className="h-4 w-4" />
-          New Estimate
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/estimates/job-walk"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:from-amber-600 hover:to-amber-700"
+          >
+            <HardHat className="h-4 w-4" />
+            Job Walk
+          </Link>
+          <Link
+            href="/estimates/new"
+            className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]"
+          >
+            <Plus className="h-4 w-4" />
+            Manual Estimate
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

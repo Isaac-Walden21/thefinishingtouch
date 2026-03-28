@@ -14,6 +14,7 @@ import {
   Camera,
   Calculator,
   Send,
+  HardHat,
 } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
 import ActivityTimeline from "@/components/ActivityTimeline";
@@ -137,6 +138,13 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          <Link
+            href="/estimates/job-walk"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-amber-500/20 transition-colors hover:from-amber-600 hover:to-amber-700"
+          >
+            <HardHat className="h-4 w-4" />
+            New Job Walk
+          </Link>
           <Link
             href="/customers/new"
             className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0085FF]/20 transition-colors hover:bg-[#0177E3]"
@@ -350,6 +358,13 @@ export default function DashboardPage() {
             Quick Actions
           </span>
           <div className="h-4 w-px bg-slate-200" />
+          <Link
+            href="/estimates/job-walk"
+            className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors shrink-0"
+          >
+            <HardHat className="h-3.5 w-3.5" />
+            New Job Walk
+          </Link>
           <Link
             href="/customers/new"
             className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-[#0085FF]/30 hover:text-[#0085FF] transition-colors shrink-0"
