@@ -101,7 +101,7 @@ export default function NewInvoicePage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 pt-16 lg:p-8 lg:pt-8">
       <Link
         href="/invoices"
         className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
