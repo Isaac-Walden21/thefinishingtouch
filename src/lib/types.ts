@@ -62,7 +62,7 @@ export interface Lead {
 }
 
 // Calendar & Availability
-export type EventType = "quote_visit" | "blocked" | "personal";
+export type EventType = "quote_visit" | "pour_day" | "cleanup" | "delivery" | "personal" | "blocked";
 export type EventStatus = "scheduled" | "completed" | "cancelled" | "no_show";
 
 export interface AvailabilityRule {
@@ -379,17 +379,35 @@ export type AgentType =
   | "lead_followup"
   | "quote_followup"
   | "review_request"
-  | "website_chatbot";
+  | "website_chatbot"
+  | "job_completion"
+  | "appointment_reminder"
+  | "seasonal_reengagement";
 
 export type AgentStatus = "active" | "paused";
 
 export type ApprovalMode = "auto_send" | "requires_approval";
+
+export type AgentChannel = "email" | "sms" | "both";
+export type EscalationAction = "do_nothing" | "notify_evan" | "mark_cold";
 
 export interface AgentConfig {
   wait_hours: number;
   escalate_after_days: number;
   approval_mode: ApprovalMode;
   message_template: string;
+  follow_up_interval_days?: number;
+  max_follow_ups?: number;
+  escalation_action?: EscalationAction;
+  active_hours_start?: string;
+  active_hours_end?: string;
+  active_days?: number[];
+  channel?: AgentChannel;
+  templates?: {
+    first_contact?: string;
+    second_followup?: string;
+    final_followup?: string;
+  };
 }
 
 export interface AgentAction {
@@ -443,6 +461,24 @@ export const AGENT_TYPE_CONFIG: Record<
     color: "text-purple-400",
     bgColor: "bg-purple-500/20",
     icon: "MessageCircle",
+  },
+  job_completion: {
+    label: "Job Completion",
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/20",
+    icon: "CheckCircle2",
+  },
+  appointment_reminder: {
+    label: "Appointment Reminder",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+    icon: "Bell",
+  },
+  seasonal_reengagement: {
+    label: "Seasonal Re-engagement",
+    color: "text-rose-400",
+    bgColor: "bg-rose-500/20",
+    icon: "Sun",
   },
 };
 
@@ -548,4 +584,92 @@ export interface VisionProject {
   created_at: string;
   updated_at: string;
   customer?: Customer;
+  starred?: boolean;
+  annotations?: Annotation[];
 }
+
+// ── Annotations ──
+
+export type AnnotationType = "arrow" | "circle" | "rectangle" | "text";
+
+export interface Annotation {
+  id: string;
+  type: AnnotationType;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  endX?: number;
+  endY?: number;
+  radius?: number;
+  text?: string;
+  color: string;
+}
+
+// ── Email Builder Blocks ──
+
+export type EmailBlockType = "header" | "text" | "image" | "button" | "divider" | "footer";
+
+export interface EmailBlock {
+  id: string;
+  type: EmailBlockType;
+  content: Record<string, string>;
+}
+
+// ── Referrals ──
+
+export interface Referral {
+  id: string;
+  referrer_id: string;
+  referrer_name: string;
+  referred_name: string;
+  referred_email: string;
+  referred_phone: string | null;
+  code: string;
+  status: "pending" | "contacted" | "booked" | "completed";
+  created_at: string;
+}
+
+// ── Settings ──
+
+export interface CompanySettings {
+  company_name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  website: string;
+  logo_url: string | null;
+  google_review_url: string;
+  service_area: string;
+}
+
+export interface IntegrationConfig {
+  id: string;
+  provider: "stripe" | "google_calendar" | "twilio" | "google_places" | "gmail" | "quickbooks";
+  label: string;
+  description: string;
+  status: "connected" | "not_connected" | "error";
+  last_activity: string | null;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  user_name: string;
+  action: string;
+  category: string;
+  old_value: string | null;
+  new_value: string | null;
+  created_at: string;
+}
+
+export const EVENT_TYPE_CONFIG: Record<EventType, { label: string; color: string; bgColor: string }> = {
+  quote_visit: { label: "Quote Visit", color: "text-[#0085FF]", bgColor: "bg-[#0085FF]/10" },
+  pour_day: { label: "Pour Day", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  cleanup: { label: "Cleanup", color: "text-amber-600", bgColor: "bg-amber-50" },
+  delivery: { label: "Delivery", color: "text-purple-600", bgColor: "bg-purple-50" },
+  personal: { label: "Personal", color: "text-slate-500", bgColor: "bg-slate-100" },
+  blocked: { label: "Blocked", color: "text-slate-400", bgColor: "bg-slate-200" },
+};
