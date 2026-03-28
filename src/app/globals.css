@@ -24,7 +24,15 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand-blue);
   --color-brand-hover: var(--brand-blue-hover);
+  --color-brand-light: var(--brand-blue-light);
   --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-navy: var(--brand-navy);
+  --color-charcoal: var(--brand-charcoal);
   --font-sans: var(--font-inter);
   --font-heading: var(--font-work-sans);
   --font-mono: var(--font-geist-mono);

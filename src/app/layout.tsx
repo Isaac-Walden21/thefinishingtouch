@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Work_Sans } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
+import { Inter, Work_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${workSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#F1F5F9]">{children}</body>
+      <body className="min-h-full bg-background">{children}</body>
     </html>
   );
 }

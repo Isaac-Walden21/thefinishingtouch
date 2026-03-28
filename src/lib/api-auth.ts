@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
-// Note: In-memory rate limiting. On Vercel serverless, each cold start resets the Map.
-// Acceptable for v1. For production, use Upstash Redis or similar.
+
+// In-memory rate limiting — resets on each Vercel cold start.
+// TODO: Replace with Upstash Redis or Vercel KV for production.
+// This is a known limitation: on serverless, each new instance starts fresh,
+// so sustained abuse across instances will bypass the limit.
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
 
 export function validateApiKey(request: NextRequest): boolean {
@@ -36,5 +39,14 @@ export function unauthorizedResponse() {
 }
 
 export function rateLimitedResponse() {
-  return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  return NextResponse.json(
+    { error: "Too many requests. Please try again later." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": "60",
+        "X-RateLimit-Reset": String(Math.ceil(Date.now() / 1000) + 60),
+      },
+    }
+  );
 }

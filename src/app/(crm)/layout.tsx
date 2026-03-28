@@ -8,7 +8,7 @@ export default function CrmLayout({
   return (
     <>
       <Sidebar />
-      <main className="ml-64 min-h-screen">{children}</main>
+      <main className="min-h-screen lg:ml-64">{children}</main>
     </>
   );
 }

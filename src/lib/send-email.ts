@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const FROM_EMAIL = "The Finishing Touch <noreply@thefinishingtouchllc.com>";
 
@@ -9,7 +11,7 @@ export async function sendEmail(
   subject: string,
   html: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend) {
     console.log(`[DEMO] Would send email to ${to}: ${subject}`);
     return { success: true };
   }

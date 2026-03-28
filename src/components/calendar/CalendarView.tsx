@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { clsx } from "clsx";
 import type { CalendarEvent } from "@/lib/types";
 import EventModal from "./EventModal";
 
@@ -37,19 +38,11 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
 
   function prevWeek() {
-    setCurrentDate((d) => {
-      const n = new Date(d);
-      n.setDate(n.getDate() - 7);
-      return n;
-    });
+    setCurrentDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; });
   }
 
   function nextWeek() {
-    setCurrentDate((d) => {
-      const n = new Date(d);
-      n.setDate(n.getDate() + 7);
-      return n;
-    });
+    setCurrentDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; });
   }
 
   function goToday() {
@@ -77,7 +70,7 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
   function getEventColor(event: CalendarEvent): string {
     if (event.type === "blocked") return "bg-slate-200 border-slate-300 text-slate-600";
     if (event.type === "personal") return "bg-purple-100 border-purple-300 text-purple-800";
-    return "bg-[#0085FF]/10 border-[#0085FF]/30 text-[#0085FF]";
+    return "bg-brand/10 border-brand/30 text-brand";
   }
 
   const monthLabel = weekDates[0].toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -86,7 +79,7 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-[#0F172A]">{monthLabel}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{monthLabel}</h2>
           <div className="flex items-center gap-1">
             <button onClick={prevWeek} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
               <ChevronLeft className="h-5 w-5" />
@@ -101,15 +94,15 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-surface overflow-hidden">
         <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-slate-200">
           <div className="p-2" />
           {weekDates.map((date, i) => {
             const isToday = date.toDateString() === new Date().toDateString();
             return (
-              <div key={i} className={`p-2 text-center border-l border-slate-200 ${isToday ? "bg-[#0085FF]/5" : ""}`}>
+              <div key={i} className={clsx("p-2 text-center border-l border-slate-200", isToday && "bg-brand/5")}>
                 <div className="text-xs text-slate-500">{DAYS[date.getDay()]}</div>
-                <div className={`text-lg font-semibold ${isToday ? "text-[#0085FF]" : "text-[#0F172A]"}`}>
+                <div className={clsx("text-lg font-semibold", isToday ? "text-brand" : "text-foreground")}>
                   {date.getDate()}
                 </div>
               </div>
@@ -119,31 +112,17 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
 
         <div className="grid grid-cols-[60px_repeat(7,1fr)] relative" style={{ height: `${HOURS.length * 60}px` }}>
           {HOURS.map((hour) => (
-            <div
-              key={hour}
-              className="absolute left-0 w-[60px] text-right pr-2 text-xs text-slate-400"
-              style={{ top: `${(hour - 7) * 60 - 8}px` }}
-            >
+            <div key={hour} className="absolute left-0 w-[60px] text-right pr-2 text-xs text-slate-400" style={{ top: `${(hour - 7) * 60 - 8}px` }}>
               {formatHour(hour)}
             </div>
           ))}
-
           {HOURS.map((hour) => (
-            <div
-              key={`line-${hour}`}
-              className="absolute left-[60px] right-0 border-t border-slate-100"
-              style={{ top: `${(hour - 7) * 60}px` }}
-            />
+            <div key={`line-${hour}`} className="absolute left-[60px] right-0 border-t border-slate-100" style={{ top: `${(hour - 7) * 60}px` }} />
           ))}
-
           {weekDates.map((date, dayIdx) => {
             const dayEvents = getEventsForDay(date);
             return (
-              <div
-                key={dayIdx}
-                className="relative border-l border-slate-200"
-                style={{ gridColumn: dayIdx + 2, gridRow: 1 }}
-              >
+              <div key={dayIdx} className="relative border-l border-slate-200" style={{ gridColumn: dayIdx + 2, gridRow: 1 }}>
                 {dayEvents.map((event) => (
                   <button
                     key={event.id}
@@ -160,11 +139,7 @@ export default function CalendarView({ events, onDeleteEvent }: CalendarViewProp
         </div>
       </div>
 
-      <EventModal
-        event={selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-        onDelete={onDeleteEvent}
-      />
+      <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onDelete={onDeleteEvent} />
     </div>
   );
 }

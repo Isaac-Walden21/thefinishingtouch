@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Upload,
   Camera,
@@ -13,13 +14,13 @@ import {
   User,
   X,
 } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import { demoCustomers, demoVisionProjects } from "@/lib/demo-data";
 import { PROJECT_TYPES } from "@/lib/types";
-
-const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
-const selectClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none";
+import { formatDate } from "@/lib/format";
 
 interface VisionResult {
   image_url: string | null;
@@ -68,15 +69,6 @@ export default function VisionStudioPage() {
     if (file) handleFile(file);
   }
 
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave() {
-    setIsDragging(false);
-  }
-
   async function handleGenerate(addOn: string | null = null) {
     setGenerating(true);
     try {
@@ -86,11 +78,7 @@ export default function VisionStudioPage() {
       if (addOn) formData.append("add_on", addOn);
       if (uploadedFile) formData.append("image", uploadedFile);
 
-      const res = await fetch("/api/vision/generate", {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch("/api/vision/generate", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Failed to generate");
 
       const data = (await res.json()) as VisionResult;
@@ -122,142 +110,81 @@ export default function VisionStudioPage() {
   const hasResult = result !== null;
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">
-            AI Vision Studio
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Upload a photo and visualize the finished project with AI
-          </p>
-        </div>
-        <Link
-          href="/vision/history"
-          className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          <History className="h-4 w-4" />
-          View History
-        </Link>
-      </div>
+    <div className="p-4 pt-16 lg:p-8 lg:pt-8">
+      <PageHeader
+        title="AI Vision Studio"
+        subtitle="Upload a photo and visualize the finished project with AI"
+        action={
+          <Button variant="secondary" href="/vision/history">
+            <History className="h-4 w-4" />
+            View History
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Left: Upload & Controls */}
         <div className="space-y-6">
-          {/* Upload Zone */}
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
-              Customer Photo
-            </h2>
-
+          <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Customer Photo</h2>
             {!uploadedImage ? (
               <div
                 onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 cursor-pointer transition-colors ${
-                  isDragging
-                    ? "border-[#0085FF] bg-[#0085FF]/5"
-                    : "border-slate-200 bg-slate-50 hover:border-[#0085FF]/30"
+                  isDragging ? "border-brand bg-brand/5" : "border-slate-200 bg-slate-50 hover:border-brand/30"
                 }`}
               >
                 <Upload className="h-10 w-10 text-slate-400 mb-4" />
-                <p className="text-sm font-medium text-slate-600 mb-1">
-                  Drag & drop a photo here
-                </p>
-                <p className="text-xs text-slate-400">
-                  or click to browse files
-                </p>
+                <p className="text-sm font-medium text-slate-600 mb-1">Drag & drop a photo here</p>
+                <p className="text-xs text-slate-400">or click to browse files</p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFile(file);
-                  }}
+                  onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFile(file); }}
                 />
               </div>
             ) : (
-              <div className="relative">
-                <img
-                  src={uploadedImage}
-                  alt="Uploaded photo"
-                  className="w-full rounded-lg object-cover max-h-80"
-                />
-                <button
-                  onClick={clearUpload}
-                  className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
-                >
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                {/* Using img for blob/data URLs which next/image can't optimize */}
+                <img src={uploadedImage} alt="Uploaded photo" className="h-full w-full object-cover" />
+                <button onClick={clearUpload} className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Controls */}
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Service Type *
-              </label>
-              <select
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Select service type...</option>
-                {PROJECT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                What do you want done? *
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                placeholder="e.g. I want a stamped concrete patio with a fire pit in the backyard"
-                className={`${inputClass} resize-none`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Link to Customer (optional)
-              </label>
-              <select
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Select a customer...</option>
-                {demoCustomers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-6 space-y-4">
+            <Select label="Service Type *" value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
+              <option value="">Select service type...</option>
+              {PROJECT_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </Select>
+            <Textarea
+              label="What do you want done? *"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="e.g. I want a stamped concrete patio with a fire pit in the backyard"
+            />
+            <Select label="Link to Customer (optional)" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+              <option value="">Select a customer...</option>
+              {demoCustomers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
             <button
               onClick={() => handleGenerate(null)}
               disabled={!serviceType || !description || generating}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0085FF] to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-brand to-purple-600 px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {generating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generating ? "Generating Vision..." : "Generate Vision"}
             </button>
           </div>
@@ -266,38 +193,26 @@ export default function VisionStudioPage() {
         {/* Right: Results */}
         <div className="space-y-6">
           {!hasResult ? (
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-12 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-12 flex flex-col items-center justify-center min-h-[400px]">
               <Camera className="h-16 w-16 text-slate-300 mb-4" />
               <p className="text-sm text-slate-500 text-center max-w-xs">
-                Upload a photo, choose a service type, and describe what you
-                want. AI will generate a photorealistic visualization.
+                Upload a photo, choose a service type, and describe what you want. AI will generate a photorealistic visualization.
               </p>
             </div>
           ) : (
             <>
-              {/* Before / After */}
-              <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
-                  Visualization Result
-                </h2>
-
+              <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4">Visualization Result</h2>
                 {result.demo_mode && result.message && (
-                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-600">
-                    {result.message}
-                  </div>
+                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-600">{result.message}</div>
                 )}
-
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">
-                      Original
-                    </p>
+                    <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Original</p>
                     {uploadedImage ? (
-                      <img
-                        src={uploadedImage}
-                        alt="Original"
-                        className="w-full rounded-lg object-cover aspect-[4/3]"
-                      />
+                      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+                        <img src={uploadedImage} alt="Original" className="h-full w-full object-cover" />
+                      </div>
                     ) : (
                       <div className="w-full rounded-lg bg-slate-100 aspect-[4/3] flex items-center justify-center">
                         <ImageIcon className="h-8 w-8 text-slate-400" />
@@ -305,91 +220,60 @@ export default function VisionStudioPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">
-                      AI Vision
-                    </p>
+                    <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">AI Vision</p>
                     {iterations[selectedIteration]?.image_url ? (
-                      <img
-                        src={iterations[selectedIteration].image_url!}
-                        alt="AI Generated"
-                        className="w-full rounded-lg object-cover aspect-[4/3]"
-                      />
+                      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+                        <img src={iterations[selectedIteration].image_url!} alt="AI Generated" className="h-full w-full object-cover" />
+                      </div>
                     ) : (
-                      <div className="w-full rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 border border-slate-200 aspect-[4/3] flex flex-col items-center justify-center">
-                        <Sparkles className="h-8 w-8 text-[#0085FF]/40 mb-2" />
-                        <p className="text-xs text-slate-500 text-center px-4">
-                          Image generation requires GEMINI_API_KEY
-                        </p>
+                      <div className="w-full rounded-lg bg-gradient-to-br from-brand/10 to-purple-100 border border-slate-200 aspect-[4/3] flex flex-col items-center justify-center">
+                        <Sparkles className="h-8 w-8 text-brand/40 mb-2" />
+                        <p className="text-xs text-slate-500 text-center px-4">Image generation requires GEMINI_API_KEY</p>
                       </div>
                     )}
                   </div>
                 </div>
-
                 <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
-                  <p className="text-xs text-slate-500 mb-1">
-                    AI-Optimized Prompt:
-                  </p>
-                  <p className="text-xs text-slate-600 italic">
-                    {iterations[selectedIteration]?.prompt_used ||
-                      result.prompt_used}
-                  </p>
+                  <p className="text-xs text-slate-500 mb-1">AI-Optimized Prompt:</p>
+                  <p className="text-xs text-slate-600 italic">{iterations[selectedIteration]?.prompt_used || result.prompt_used}</p>
                 </div>
               </div>
 
-              {/* Iterations Gallery */}
               {iterations.length > 1 && (
-                <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
-                  <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
-                    Iterations ({iterations.length})
-                  </h3>
+                <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-6">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Iterations ({iterations.length})</h3>
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {iterations.map((iter, idx) => (
                       <button
                         key={iter.id}
                         onClick={() => setSelectedIteration(idx)}
                         className={`flex-shrink-0 rounded-lg border-2 overflow-hidden transition-colors ${
-                          selectedIteration === idx
-                            ? "border-[#0085FF]"
-                            : "border-slate-200 hover:border-[#0085FF]/30"
+                          selectedIteration === idx ? "border-brand" : "border-slate-200 hover:border-brand/30"
                         }`}
                       >
-                        <div className="w-20 h-16 bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center">
+                        <div className="w-20 h-16 bg-gradient-to-br from-brand/10 to-purple-100 flex items-center justify-center">
                           {iter.image_url ? (
-                            <img
-                              src={iter.image_url}
-                              alt={`Iteration ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={iter.image_url} alt={`Iteration ${idx + 1}`} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-xs text-slate-400">
-                              #{idx + 1}
-                            </span>
+                            <span className="text-xs text-slate-400">#{idx + 1}</span>
                           )}
                         </div>
-                        {iter.add_on && (
-                          <p className="px-1.5 py-1 text-[10px] text-slate-500 truncate max-w-20">
-                            + {iter.add_on.split(" ").slice(0, 2).join(" ")}
-                          </p>
-                        )}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Add-On Suggestions */}
               {result.suggested_add_ons.length > 0 && (
-                <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
-                  <h3 className="text-sm font-semibold text-[#0F172A] mb-3">
-                    Want to see more?
-                  </h3>
+                <div className="rounded-xl border border-slate-200 bg-surface shadow-sm p-6">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Want to see more?</h3>
                   <div className="flex flex-wrap gap-2">
                     {result.suggested_add_ons.map((addOn) => (
                       <button
                         key={addOn}
                         onClick={() => handleGenerate(addOn)}
                         disabled={generating}
-                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 transition-colors hover:border-[#0085FF]/30 hover:text-[#0085FF] disabled:opacity-50"
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 transition-colors hover:border-brand/30 hover:text-brand disabled:opacity-50"
                       >
                         <Plus className="h-3 w-3" />
                         {addOn.charAt(0).toUpperCase() + addOn.slice(1)}
@@ -399,57 +283,34 @@ export default function VisionStudioPage() {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex gap-3">
-                <button className="flex items-center gap-2 rounded-lg bg-[#0085FF] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0177E3]">
-                  <User className="h-4 w-4" />
-                  Save to Customer
-                </button>
-                <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
-                  Share with Customer
-                </button>
+                <Button><User className="h-4 w-4" />Save to Customer</Button>
+                <Button variant="secondary">Share with Customer</Button>
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Recent Vision Projects */}
       {demoVisionProjects.length > 0 && !hasResult && (
         <div className="mt-12">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
-            Recent Visualizations
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Recent Visualizations</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {demoVisionProjects.map((proj) => (
-              <div
-                key={proj.id}
-                className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 transition-colors hover:border-[#0085FF]/30"
-              >
+              <div key={proj.id} className="rounded-xl border border-slate-200 bg-surface shadow-sm p-4 transition-colors hover:border-brand/30">
                 <div className="flex gap-3 mb-3">
-                  <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-brand/10 to-purple-100 flex items-center justify-center flex-shrink-0">
                     <ImageIcon className="h-5 w-5 text-slate-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">
-                      {proj.service_type}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {proj.customer_name}
-                    </p>
+                    <p className="text-sm font-medium text-slate-700 truncate">{proj.service_type}</p>
+                    <p className="text-xs text-slate-500 truncate">{proj.customer_name}</p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-2 mb-2">
-                  {proj.description}
-                </p>
+                <p className="text-xs text-slate-500 line-clamp-2 mb-2">{proj.description}</p>
                 <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>
-                    {proj.iterations.length} iteration
-                    {proj.iterations.length !== 1 ? "s" : ""}
-                  </span>
-                  <span>
-                    {new Date(proj.created_at).toLocaleDateString()}
-                  </span>
+                  <span>{proj.iterations.length} iteration{proj.iterations.length !== 1 ? "s" : ""}</span>
+                  <span>{formatDate(proj.created_at)}</span>
                 </div>
               </div>
             ))}

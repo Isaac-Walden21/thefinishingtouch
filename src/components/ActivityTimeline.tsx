@@ -7,63 +7,26 @@ import {
   Bot,
 } from "lucide-react";
 import type { Activity, ActivityType } from "@/lib/types";
+import { formatDate, formatTime } from "@/lib/format";
 
 const activityConfig: Record<
   ActivityType,
   { icon: typeof Phone; color: string; bgColor: string }
 > = {
-  call: { icon: Phone, color: "text-[#0085FF]", bgColor: "bg-[#0085FF]/10" },
+  call: { icon: Phone, color: "text-brand", bgColor: "bg-brand/10" },
   email: { icon: Mail, color: "text-cyan-600", bgColor: "bg-cyan-50" },
-  quote: {
-    icon: FileText,
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-  },
-  payment: {
-    icon: CreditCard,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-  },
-  note: {
-    icon: StickyNote,
-    color: "text-slate-500",
-    bgColor: "bg-slate-100",
-  },
-  ai_action: {
-    icon: Bot,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
+  quote: { icon: FileText, color: "text-orange-600", bgColor: "bg-orange-50" },
+  payment: { icon: CreditCard, color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  note: { icon: StickyNote, color: "text-slate-500", bgColor: "bg-slate-100" },
+  ai_action: { icon: Bot, color: "text-purple-600", bgColor: "bg-purple-50" },
 };
-
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatTime(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export default function ActivityTimeline({
   activities,
 }: {
   activities: Activity[];
 }) {
-  const sorted = [...activities].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-  if (sorted.length === 0) {
+  if (activities.length === 0) {
     return (
       <p className="text-sm text-slate-500 py-4">No activity recorded yet.</p>
     );
@@ -71,10 +34,10 @@ export default function ActivityTimeline({
 
   return (
     <div className="space-y-0">
-      {sorted.map((activity, i) => {
+      {activities.map((activity, i) => {
         const config = activityConfig[activity.type];
         const Icon = config.icon;
-        const isLast = i === sorted.length - 1;
+        const isLast = i === activities.length - 1;
 
         return (
           <div key={activity.id} className="flex gap-4">
@@ -84,7 +47,7 @@ export default function ActivityTimeline({
               </div>
               {!isLast && <div className="w-px flex-1 bg-slate-200" />}
             </div>
-            <div className={`pb-6 ${isLast ? "" : ""}`}>
+            <div className="pb-6">
               <p className="text-sm text-slate-700">{activity.description}</p>
               <p className="mt-1 text-xs text-slate-400">
                 {formatDate(activity.created_at)} at{" "}
