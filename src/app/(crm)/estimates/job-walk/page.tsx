@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,6 +24,20 @@ interface PhotoEntry {
 }
 
 export default function JobWalkIntakePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0085FF]" />
+        </div>
+      }
+    >
+      <JobWalkIntakeForm />
+    </Suspense>
+  );
+}
+
+function JobWalkIntakeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillLeadId = searchParams.get("lead_id");
