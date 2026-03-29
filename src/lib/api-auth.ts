@@ -53,7 +53,7 @@ export function rateLimitedResponse() {
 
 /**
  * Extract function arguments from a Vapi tool call payload.
- * Vapi sends: { message: { toolCallList: [{ function: { arguments: "{...}" } }] } }
+ * Vapi sends: { message: { toolCallList: [{ id, function: { arguments: "{...}" } }] } }
  * Falls back to treating the body itself as flat arguments (for direct API calls).
  */
 export function extractVapiArgs(body: Record<string, unknown>): Record<string, unknown> {
@@ -62,13 +62,34 @@ export function extractVapiArgs(body: Record<string, unknown>): Record<string, u
   if (message) {
     const toolCallList = (message.toolCallList ?? message.toolCalls) as Array<Record<string, unknown>> | undefined;
     if (toolCallList && toolCallList.length > 0) {
-      const fn = toolCallList[0].function as Record<string, unknown> | undefined;
+      const toolCall = toolCallList[0];
+      const fn = toolCall.function as Record<string, unknown> | undefined;
       if (fn?.arguments) {
         const args = typeof fn.arguments === "string" ? JSON.parse(fn.arguments) : fn.arguments;
-        return { ...args, _vapiToolCallId: toolCallList[0].id };
+        return { ...args, _vapiToolCallId: toolCall.id };
       }
     }
   }
   // Flat body fallback (direct API calls)
   return body;
+}
+
+/**
+ * Wrap a response in Vapi's expected format if the request came from Vapi.
+ * Vapi expects: { results: [{ toolCallId, result }] }
+ * Direct API calls get the data as-is.
+ */
+export function vapiResponse(data: unknown, args: Record<string, unknown>): unknown {
+  const toolCallId = args._vapiToolCallId as string | undefined;
+  if (toolCallId) {
+    return {
+      results: [
+        {
+          toolCallId,
+          result: data,
+        },
+      ],
+    };
+  }
+  return data;
 }

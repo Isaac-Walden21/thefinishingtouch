@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
 
 export async function GET(request: NextRequest) {
@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
   }
 
   const raw = await request.json();
-  const body = extractVapiArgs(raw);
+  const vapiArgs = extractVapiArgs(raw);
+  const body = vapiArgs;
   const {
     team_member_id,
     type = "quote_visit",
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     if (eventError) throw new Error(`Event creation failed: ${eventError.message}`);
 
-    return NextResponse.json(event, { status: 201 });
+    return NextResponse.json(vapiResponse(event, vapiArgs), { status: 201 });
   } catch (error) {
     console.error("Event creation error:", error);
     return NextResponse.json(

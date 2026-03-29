@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validateApiKey, rateLimit, unauthorizedResponse, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, unauthorizedResponse, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
 
 export async function POST(request: NextRequest) {
@@ -10,13 +10,13 @@ export async function POST(request: NextRequest) {
   if (!rl.allowed) return rateLimitedResponse();
 
   const raw = await request.json();
-  const args = extractVapiArgs(raw);
+  const vapiArgs = extractVapiArgs(raw);
   // Handle Vapi typo fallback: "cusotmer_phone" → "customer_phone"
-  const customer_name = args.customer_name as string | undefined;
-  const customer_phone = (args.customer_phone ?? args.cusotmer_phone) as string | undefined;
-  const message = args.message as string | undefined;
-  const service_type = args.service_type as string | undefined;
-  const vapi_call_id = args.vapi_call_id as string | undefined;
+  const customer_name = vapiArgs.customer_name as string | undefined;
+  const customer_phone = (vapiArgs.customer_phone ?? vapiArgs.cusotmer_phone) as string | undefined;
+  const message = vapiArgs.message as string | undefined;
+  const service_type = vapiArgs.service_type as string | undefined;
+  const vapi_call_id = vapiArgs.vapi_call_id as string | undefined;
 
   if (!customer_name || !customer_phone) {
     return NextResponse.json(
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     if (error) throw new Error(`Lead creation failed: ${error.message}`);
 
-    return NextResponse.json(lead, { status: 201 });
+    return NextResponse.json(vapiResponse(lead, vapiArgs), { status: 201 });
   } catch (error) {
     console.error("Lead from call error:", error);
     return NextResponse.json(

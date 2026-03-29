@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { getAvailableSlots } from "@/lib/availability";
 
 // GET /api/calendar/availability?start=YYYY-MM-DD&end=YYYY-MM-DD
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const slots = await getAvailableSlots(start, end, teamMemberId);
-    return NextResponse.json({ slots });
+    return NextResponse.json(vapiResponse({ slots }, args));
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Failed to compute availability";
     console.error("Availability POST error:", msg, error);
