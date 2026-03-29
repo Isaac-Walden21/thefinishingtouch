@@ -10,8 +10,13 @@ export async function POST(request: NextRequest) {
   if (!rl.allowed) return rateLimitedResponse();
 
   const raw = await request.json();
-  const body = extractVapiArgs(raw);
-  const { customer_name, customer_phone, message, service_type, vapi_call_id } = body as Record<string, string | undefined>;
+  const args = extractVapiArgs(raw);
+  // Handle Vapi typo fallback: "cusotmer_phone" → "customer_phone"
+  const customer_name = args.customer_name as string | undefined;
+  const customer_phone = (args.customer_phone ?? args.cusotmer_phone) as string | undefined;
+  const message = args.message as string | undefined;
+  const service_type = args.service_type as string | undefined;
+  const vapi_call_id = args.vapi_call_id as string | undefined;
 
   if (!customer_name || !customer_phone) {
     return NextResponse.json(
