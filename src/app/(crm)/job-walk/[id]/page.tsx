@@ -41,10 +41,10 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import AnnotationCanvas from "@/components/AnnotationCanvas";
-import type { Customer, JobWalk, JobWalkPhoto } from "@/lib/types";
 import {
   JOB_WALK_STATUS_CONFIG,
   MATERIAL_OPTIONS,
+  type Customer,
   type JobWalk,
   type JobWalkPhoto,
   type JobWalkMeasurementArea,
@@ -63,6 +63,7 @@ import {
   type PriorityLevel,
   type PhotoCategory,
   type Annotation,
+  type JobWalkStatus,
 } from "@/lib/types";
 import { formatDate, formatPhone } from "@/lib/format";
 
@@ -548,7 +549,7 @@ export default function JobWalkDetailPage() {
 
   // ── State ──
 
-  const [status, setStatus] = useState("draft");
+  const [status, setStatus] = useState<JobWalkStatus>("draft");
 
   // Measurements
   const [areas, setAreas] = useState<JobWalkMeasurementArea[]>([
