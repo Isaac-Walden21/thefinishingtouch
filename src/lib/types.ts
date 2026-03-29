@@ -665,6 +665,114 @@ export interface AuditLogEntry {
   created_at: string;
 }
 
+// ── Module 15: Job Walk ──
+
+export type JobWalkStatus = "draft" | "completed" | "estimated";
+
+export const JOB_WALK_STATUS_CONFIG: Record<
+  JobWalkStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  draft: { label: "Draft", color: "text-amber-600", bgColor: "bg-amber-50" },
+  completed: { label: "Completed", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  estimated: { label: "Estimated", color: "text-blue-600", bgColor: "bg-blue-50" },
+};
+
+export type SoilType = "Clay" | "Sandy" | "Rocky" | "Topsoil" | "Unknown";
+export type DrainageType = "Good" | "Poor" | "Standing Water" | "Needs French Drain";
+export type AccessType = "Easy" | "Moderate" | "Difficult";
+export type ExistingSurface = "None" | "Concrete" | "Asphalt" | "Gravel" | "Grass/Sod";
+export type GradeType = "Flat" | "Slight Slope" | "Moderate Slope" | "Steep";
+export type UtilityLineStatus = "Located" | "Not Located" | "Need to Call 811";
+export type PermitNeeded = "Yes" | "No" | "Unsure";
+export type ObstacleType = "Trees" | "Roots" | "Utilities" | "Fence" | "Deck" | "Pool" | "Septic" | "Other";
+export type TimelineOption = "ASAP" | "2 Weeks" | "1 Month" | "Spring" | "Summer" | "Fall" | "Flexible";
+export type BudgetRange = "Under $3K" | "$3-5K" | "$5-10K" | "$10-20K" | "$20K+" | "Not Discussed";
+export type DecisionMaker = "Yes" | "Need to talk to spouse" | "Committee/HOA";
+export type ReferralPotential = "Hot" | "Maybe" | "Unlikely";
+export type PriorityLevel = "hot" | "warm" | "cool";
+export type PhotoCategory = "Overview" | "Existing Condition" | "Obstacle" | "Measurement Reference" | "Customer Request";
+
+export interface JobWalkMeasurementArea {
+  id: string;
+  name: string;
+  length: number;
+  width: number;
+  depth: number;
+}
+
+export interface JobWalkMeasurements {
+  areas: JobWalkMeasurementArea[];
+  linear_feet: number | null;
+  grade: GradeType | null;
+  elevation_change: number | null;
+}
+
+export interface JobWalkSiteConditions {
+  soil_type: SoilType | null;
+  drainage: DrainageType | null;
+  access: AccessType | null;
+  existing_surface: ExistingSurface | null;
+  demolition_required: boolean;
+  demolition_area: number | null;
+  grading_required: boolean;
+  grading_yards: number | null;
+  obstacles: ObstacleType[];
+  utility_lines: UtilityLineStatus | null;
+  permit_needed: PermitNeeded | null;
+  notes: string;
+}
+
+export interface JobWalkCustomerPreferences {
+  what_they_want: string;
+  material_preference: string | null;
+  color_finish: string;
+  timeline: TimelineOption | null;
+  budget_range: BudgetRange | null;
+  decision_maker: DecisionMaker | null;
+  getting_other_quotes: boolean;
+  other_quotes_count: number | null;
+  referral_potential: ReferralPotential | null;
+  priority: PriorityLevel | null;
+}
+
+export interface JobWalkWeather {
+  temp: number;
+  conditions: string;
+  recent_rain: boolean;
+}
+
+export interface JobWalkPhoto {
+  id: string;
+  job_walk_id: string;
+  photo_url: string;
+  caption: string;
+  category: PhotoCategory;
+  annotations: Annotation[];
+  sort_order: number;
+}
+
+export interface JobWalk {
+  id: string;
+  customer_id: string;
+  lead_id: string | null;
+  calendar_event_id: string | null;
+  estimate_id: string | null;
+  status: JobWalkStatus;
+  measurements: JobWalkMeasurements;
+  site_conditions: JobWalkSiteConditions;
+  customer_preferences: JobWalkCustomerPreferences;
+  sketch_url: string | null;
+  voice_note_url: string | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  weather: JobWalkWeather | null;
+  created_at: string;
+  completed_at: string | null;
+  customer?: Customer;
+  photos?: JobWalkPhoto[];
+}
+
 export const EVENT_TYPE_CONFIG: Record<EventType, { label: string; color: string; bgColor: string }> = {
   quote_visit: { label: "Quote Visit", color: "text-[#0085FF]", bgColor: "bg-[#0085FF]/10" },
   pour_day: { label: "Pour Day", color: "text-emerald-600", bgColor: "bg-emerald-50" },

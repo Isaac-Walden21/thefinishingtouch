@@ -16,6 +16,7 @@ import {
   Bot,
   Megaphone,
   Calendar,
+  ClipboardCheck,
   Menu,
   X,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/estimates", label: "Estimates", icon: Calculator },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/job-walk", label: "Job Walk", icon: ClipboardCheck },
   { href: "/vision", label: "Vision Studio", icon: Camera },
   { href: "/agents", label: "AI Agents", icon: Bot },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
