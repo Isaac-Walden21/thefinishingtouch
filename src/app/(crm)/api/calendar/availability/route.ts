@@ -26,11 +26,9 @@ export async function GET(request: NextRequest) {
     const slots = await getAvailableSlots(start, end, teamMemberId);
     return NextResponse.json({ slots });
   } catch (error) {
-    console.error("Availability error:", error);
-    return NextResponse.json(
-      { error: "Failed to compute availability" },
-      { status: 500 }
-    );
+    const msg = error instanceof Error ? error.message : "Failed to compute availability";
+    console.error("Availability GET error:", msg, error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -43,7 +41,13 @@ export async function POST(request: NextRequest) {
     if (!rl.allowed) return rateLimitedResponse();
   }
 
-  const raw = await request.json();
+  let raw: Record<string, unknown>;
+  try {
+    raw = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const args = extractVapiArgs(raw);
 
   const start = (args.date_range_start ?? args.start) as string | undefined;
@@ -52,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   if (!start || !end) {
     return NextResponse.json(
-      { error: "date_range_start and date_range_end are required" },
+      { error: "date_range_start and date_range_end are required", received: args },
       { status: 400 }
     );
   }
@@ -61,10 +65,8 @@ export async function POST(request: NextRequest) {
     const slots = await getAvailableSlots(start, end, teamMemberId);
     return NextResponse.json({ slots });
   } catch (error) {
-    console.error("Availability error:", error);
-    return NextResponse.json(
-      { error: "Failed to compute availability" },
-      { status: 500 }
-    );
+    const msg = error instanceof Error ? error.message : "Failed to compute availability";
+    console.error("Availability POST error:", msg, error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
