@@ -32,3 +32,24 @@ export function formatTimeAgo(dateStr: string): string {
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
+
+export function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return raw;
+}
+
+export function stripPhone(formatted: string): string {
+  return formatted.replace(/\D/g, "");
+}
+
+export function formatDaysAgo(dateStr: string): { text: string; color: string } {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days === 0) return { text: "Today", color: "text-emerald-600" };
+  if (days <= 7) return { text: `${days}d ago`, color: "text-emerald-600" };
+  if (days <= 30) return { text: `${days}d ago`, color: "text-amber-600" };
+  return { text: `${days}d ago`, color: "text-red-500" };
+}
