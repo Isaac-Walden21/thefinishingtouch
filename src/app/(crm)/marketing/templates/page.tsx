@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Eye,
@@ -13,8 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoEmailTemplates } from "@/lib/demo-data";
-import type { EmailBlock } from "@/lib/types";
+import type { EmailBlock, EmailTemplate } from "@/lib/types";
 import EmailBuilder from "@/components/EmailBuilder";
 
 const MARKETING_TABS = [
@@ -35,6 +34,12 @@ const categoryLabels: Record<string, { label: string; color: string; bgColor: st
 };
 
 export default function MarketingTemplatesPage() {
+  const [allTemplates, setAllTemplates] = useState<EmailTemplate[]>([]);
+
+  useEffect(() => {
+    fetch('/api/marketing/templates').then(r => r.json()).then(setAllTemplates).catch(console.error);
+  }, []);
+
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [mobilePreview, setMobilePreview] = useState(false);
@@ -45,7 +50,7 @@ export default function MarketingTemplatesPage() {
     { id: "b-4", type: "footer", content: { text: "The Finishing Touch LLC | Greentown, IN", unsubscribe: "{{unsubscribe_link}}" } },
   ]);
 
-  const previewTemplate = previewId ? demoEmailTemplates.find((t) => t.id === previewId) : null;
+  const previewTemplate = previewId ? allTemplates.find((t) => t.id === previewId) : null;
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
@@ -94,7 +99,7 @@ export default function MarketingTemplatesPage() {
       ) : (
         /* Template Grid */
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {demoEmailTemplates.map((template) => {
+          {allTemplates.map((template) => {
             const cat = categoryLabels[template.category] ?? categoryLabels.custom;
             return (
               <div key={template.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">

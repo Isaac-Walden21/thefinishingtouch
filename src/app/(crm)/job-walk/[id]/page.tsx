@@ -41,7 +41,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import AnnotationCanvas from "@/components/AnnotationCanvas";
-import { demoJobWalks, demoJobWalkPhotos, demoCustomers } from "@/lib/demo-data";
+import type { Customer, JobWalk, JobWalkPhoto } from "@/lib/types";
 import {
   JOB_WALK_STATUS_CONFIG,
   MATERIAL_OPTIONS,
@@ -541,31 +541,44 @@ export default function JobWalkDetailPage() {
   const id = params.id as string;
 
   // Find existing job walk or create blank state
-  const existingWalk = demoJobWalks.find((jw) => jw.id === id);
-  const existingPhotos = demoJobWalkPhotos.filter((p) => p.job_walk_id === id);
+  const [existingWalk, setExistingWalk] = useState<JobWalk | null>(null);
+  const [existingPhotos, setExistingPhotos] = useState<JobWalkPhoto[]>([]);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   // ── State ──
 
-  const [status, setStatus] = useState(existingWalk?.status ?? "draft");
-  const customer = existingWalk
-    ? demoCustomers.find((c) => c.id === existingWalk.customer_id)
-    : null;
+  const [status, setStatus] = useState("draft");
 
   // Measurements
-  const [areas, setAreas] = useState<JobWalkMeasurementArea[]>(
-    existingWalk?.measurements.areas ?? [
-      { id: "area-1", name: "Main Area", length: 0, width: 0, depth: 4 },
-    ]
-  );
-  const [linearFeet, setLinearFeet] = useState(
-    existingWalk?.measurements.linear_feet ?? 0
-  );
-  const [grade, setGrade] = useState<GradeType | null>(
-    existingWalk?.measurements.grade ?? null
-  );
-  const [elevationChange, setElevationChange] = useState(
-    existingWalk?.measurements.elevation_change ?? 0
-  );
+  const [areas, setAreas] = useState<JobWalkMeasurementArea[]>([
+    { id: "area-1", name: "Main Area", length: 0, width: 0, depth: 4 },
+  ]);
+  const [linearFeet, setLinearFeet] = useState(0);
+  const [grade, setGrade] = useState<GradeType | null>(null);
+  const [elevationChange, setElevationChange] = useState(0);
+
+  useEffect(() => {
+    fetch(`/api/job-walks/${id}`)
+      .then(r => r.json())
+      .then(async (data) => {
+        if (data && !data.error) {
+          setExistingWalk(data);
+          setStatus(data.status ?? "draft");
+          if (data.measurements) {
+            setAreas(data.measurements.areas ?? [{ id: "area-1", name: "Main Area", length: 0, width: 0, depth: 4 }]);
+            setLinearFeet(data.measurements.linear_feet ?? 0);
+            setGrade(data.measurements.grade ?? null);
+            setElevationChange(data.measurements.elevation_change ?? 0);
+          }
+          // Fetch customer
+          const customers = await fetch('/api/customers').then(r => r.json());
+          setCustomer(customers.find((c: Customer) => c.id === data.customer_id) ?? null);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setDataLoading(false));
+  }, [id]);
 
   // Site conditions
   const [soilType, setSoilType] = useState<SoilType | null>(

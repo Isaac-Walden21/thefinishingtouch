@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -25,11 +25,12 @@ import {
 import clsx from "clsx";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/Badge";
-import { demoEstimates, demoCustomers } from "@/lib/demo-data";
 import {
   ESTIMATE_STATUS_CONFIG,
   type EstimateStatus,
   type EstimateLineItem,
+  type Estimate,
+  type Customer,
 } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -39,23 +40,43 @@ export default function EstimateDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const estimate = demoEstimates.find((e) => e.id === id);
-  const customer = estimate
-    ? demoCustomers.find((c) => c.id === estimate.customer_id)
-    : null;
+  const [estimate, setEstimate] = useState<Estimate | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [status, setStatus] = useState<EstimateStatus>(
-    estimate?.status || "draft"
-  );
-  const [lineItems, setLineItems] = useState<EstimateLineItem[]>(
-    estimate?.line_items ?? []
-  );
+  const [status, setStatus] = useState<EstimateStatus>("draft");
+  const [lineItems, setLineItems] = useState<EstimateLineItem[]>([]);
   const [marginPct, setMarginPct] = useState(25);
   const [showPreview, setShowPreview] = useState(true);
   const [internalNotes, setInternalNotes] = useState("");
-  const [externalNotes, setExternalNotes] = useState(estimate?.notes ?? "");
+  const [externalNotes, setExternalNotes] = useState("");
   const [termsAndConditions, setTermsAndConditions] = useState(
     "Payment terms: 50% deposit upon acceptance, balance due upon completion. All work guaranteed for 1 year. Change orders will be quoted separately. Cancellation after acceptance incurs a 15% restocking fee on ordered materials."
+  );
+
+  useEffect(() => {
+    fetch(`/api/estimates/${id}`)
+      .then(r => r.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setEstimate(data);
+          setStatus(data.status || "draft");
+          setLineItems(data.line_items ?? []);
+          setExternalNotes(data.notes ?? "");
+          // Fetch customer
+          fetch('/api/customers').then(r => r.json()).then((customers) => {
+            setCustomer(customers.find((c: Customer) => c.id === data.customer_id) ?? null);
+          });
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
   );
 
   if (!estimate) {

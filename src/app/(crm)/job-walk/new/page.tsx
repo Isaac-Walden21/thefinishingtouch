@@ -1,27 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, User } from "lucide-react";
 import clsx from "clsx";
 import { PageHeader } from "@/components/PageHeader";
 import Button from "@/components/ui/Button";
-import { demoCustomers } from "@/lib/demo-data";
+import type { Customer } from "@/lib/types";
 
 export default function NewJobWalkPage() {
   const router = useRouter();
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const filteredCustomers = demoCustomers.filter(
+  useEffect(() => {
+    fetch('/api/customers').then(r => r.json()).then(setAllCustomers).catch(console.error);
+  }, []);
+
+  const filteredCustomers = allCustomers.filter(
     (c) =>
       !customerSearch ||
       c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
       (c.address ?? "").toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  const selectedCustomer = demoCustomers.find((c) => c.id === selectedCustomerId);
+  const selectedCustomer = allCustomers.find((c) => c.id === selectedCustomerId);
 
   function handleCreate() {
     if (!selectedCustomerId) return;

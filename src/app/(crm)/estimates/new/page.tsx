@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,11 +11,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { demoCustomers } from "@/lib/demo-data";
 import {
   PROJECT_TYPES,
   MATERIAL_OPTIONS,
   type EstimateLineItem,
+  type Customer,
 } from "@/lib/types";
 
 const inputClass =
@@ -40,6 +40,11 @@ interface GeneratedEstimate {
 
 export default function NewEstimatePage() {
   const router = useRouter();
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    fetch('/api/customers').then(r => r.json()).then(setAllCustomers).catch(console.error);
+  }, []);
 
   const [projectType, setProjectType] = useState("");
   const [length, setLength] = useState("");
@@ -118,7 +123,7 @@ export default function NewEstimatePage() {
   }
 
   const customerName =
-    demoCustomers.find((c) => c.id === customerId)?.name || "";
+    allCustomers.find((c) => c.id === customerId)?.name || "";
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
@@ -349,7 +354,7 @@ export default function NewEstimatePage() {
                   className={selectClass}
                 >
                   <option value="">Select a customer...</option>
-                  {demoCustomers.map((c) => (
+                  {allCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>

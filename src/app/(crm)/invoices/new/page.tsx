@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Save, Send } from "lucide-react";
-import { demoCustomers, demoEstimates } from "@/lib/demo-data";
-import type { InvoiceLineItem } from "@/lib/types";
+import type { InvoiceLineItem, Customer, Estimate } from "@/lib/types";
 
 const inputClass =
   "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
@@ -31,6 +30,20 @@ function newLineItem(): InvoiceLineItem {
 
 export default function NewInvoicePage() {
   const router = useRouter();
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [allEstimates, setAllEstimates] = useState<Estimate[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/estimates').then(r => r.json()),
+    ])
+      .then(([customersData, estimatesData]) => {
+        setAllCustomers(customersData);
+        setAllEstimates(estimatesData);
+      })
+      .catch(console.error);
+  }, []);
 
   const [customerId, setCustomerId] = useState("");
   const [estimateId, setEstimateId] = useState("");
@@ -44,13 +57,13 @@ export default function NewInvoicePage() {
 
   const customerEstimates = useMemo(() => {
     if (!customerId) return [];
-    return demoEstimates.filter((e) => e.customer_id === customerId);
+    return allEstimates.filter((e) => e.customer_id === customerId);
   }, [customerId]);
 
   function handleEstimateSelect(estId: string) {
     setEstimateId(estId);
     if (!estId) return;
-    const est = demoEstimates.find((e) => e.id === estId);
+    const est = allEstimates.find((e) => e.id === estId);
     if (!est) return;
     const items: InvoiceLineItem[] = est.line_items.map((li) => ({
       id: `ili-est-${li.id}`,
@@ -135,7 +148,7 @@ export default function NewInvoicePage() {
                   className={selectClass}
                 >
                   <option value="">Select a customer...</option>
-                  {demoCustomers.map((c) => (
+                  {allCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>

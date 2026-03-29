@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,15 +14,29 @@ import {
   Grid,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoVisionProjects, demoCustomers } from "@/lib/demo-data";
+import type { VisionProject, Customer } from "@/lib/types";
 
 export default function VisionHistoryPage() {
+  const [allProjects, setAllProjects] = useState<VisionProject[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/vision/portfolio').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+    ])
+      .then(([projectsData, customersData]) => {
+        setAllProjects(projectsData);
+        setAllCustomers(customersData);
+      })
+      .catch(console.error);
+  }, []);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [portfolioMode, setPortfolioMode] = useState(false);
   const [starred, setStarred] = useState<Set<string>>(new Set());
 
-  const serviceTypes = [...new Set(demoVisionProjects.map((p) => p.service_type))];
+  const serviceTypes = [...new Set(allProjects.map((p) => p.service_type))];
 
   const toggleStar = (id: string) => {
     setStarred((prev) => {
@@ -33,7 +47,7 @@ export default function VisionHistoryPage() {
     });
   };
 
-  const projects = demoVisionProjects
+  const projects = allProjects
     .filter((p) => {
       const matchesSearch =
         !search ||
@@ -107,7 +121,7 @@ export default function VisionHistoryPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((proj) => {
-            const customer = demoCustomers.find((c) => c.id === proj.customer_id);
+            const customer = allCustomers.find((c) => c.id === proj.customer_id);
             const isStarred = starred.has(proj.id);
 
             return (

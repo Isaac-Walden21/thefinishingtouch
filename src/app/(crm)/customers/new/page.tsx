@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,7 +16,7 @@ import {
 import clsx from "clsx";
 import { PageHeader } from "@/components/PageHeader";
 import { Toggle } from "@/components/ui/Toggle";
-import { demoCustomers, demoTeam } from "@/lib/demo-data";
+import type { Customer, TeamMember } from "@/lib/types";
 import { formatPhone, stripPhone } from "@/lib/format";
 
 const serviceTypes = [
@@ -55,6 +55,8 @@ interface DuplicateMatch {
 
 export default function NewCustomerPage() {
   const router = useRouter();
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [allTeam, setAllTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [showFullForm, setShowFullForm] = useState(false);
   const [highPriority, setHighPriority] = useState(false);
@@ -74,6 +76,18 @@ export default function NewCustomerPage() {
   const [projectType, setProjectType] = useState("");
   const [quotedAmount, setQuotedAmount] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/team-members').then(r => r.json()),
+    ])
+      .then(([customersData, teamData]) => {
+        setAllCustomers(customersData);
+        setAllTeam(teamData);
+      })
+      .catch(console.error);
+  }, []);
 
   // Validation
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -100,7 +114,7 @@ export default function NewCustomerPage() {
       const matches: DuplicateMatch[] = [];
       const cleanPhone = stripPhone(checkPhone);
 
-      demoCustomers.forEach((c) => {
+      allCustomers.forEach((c) => {
         const cPhone = c.phone ? stripPhone(c.phone) : "";
         const phoneMatch = cleanPhone.length >= 10 && cPhone === cleanPhone;
         const nameMatch =
@@ -133,15 +147,36 @@ export default function NewCustomerPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!validate()) return;
     setSaving(true);
-    // Demo mode - simulate save
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          phone: stripPhone(phone),
+          email,
+          address,
+          city,
+          state,
+          zip,
+          service_type: serviceType,
+          source,
+          assigned_to: assignTo || null,
+          notes,
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+      }
+    } catch {
+      // handle error
+    } finally {
       setSaving(false);
-      setSaved(true);
-    }, 500);
+    }
   }
 
   function handleAddAnother() {
@@ -397,7 +432,7 @@ export default function NewCustomerPage() {
                     className={clsx(inputClass, "appearance-auto")}
                   >
                     <option value="">Select team member...</option>
-                    {demoTeam
+                    {allTeam
                       .filter((t) => t.is_active)
                       .map((t) => (
                         <option key={t.id} value={t.id}>

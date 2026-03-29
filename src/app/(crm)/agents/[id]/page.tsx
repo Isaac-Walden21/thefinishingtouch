@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -24,8 +24,7 @@ import {
   X,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoAgents, demoAgentActions, demoCustomers } from "@/lib/demo-data";
-import type { AgentType, ApprovalMode, AgentChannel, EscalationAction } from "@/lib/types";
+import type { AgentType, ApprovalMode, AgentChannel, EscalationAction, AIAgent, AgentAction, Customer } from "@/lib/types";
 
 const agentIcons: Record<AgentType, typeof Bot> = {
   lead_followup: UserPlus,
@@ -63,7 +62,26 @@ export default function AgentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const agent = demoAgents.find((a) => a.id === id);
+  const [allAgents, setAllAgents] = useState<AIAgent[]>([]);
+  const [allAgentActions, setAllAgentActions] = useState<AgentAction[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/agents').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+    ])
+      .then(([agentsData, customersData]) => {
+        setAllAgents(agentsData.agents ?? agentsData);
+        setAllAgentActions(agentsData.actions ?? []);
+        setAllCustomers(customersData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const agent = allAgents.find((a) => a.id === id);
 
   const [status, setStatus] = useState(agent?.status ?? "paused");
   const [waitHours, setWaitHours] = useState(agent?.config.wait_hours ?? 24);
@@ -82,8 +100,14 @@ export default function AgentDetailPage({
   const [saved, setSaved] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
   const [testEmail, setTestEmail] = useState("evan@thefinishingtouchllc.com");
-  const [testCustomerId, setTestCustomerId] = useState(demoCustomers[0]?.id ?? "");
+  const [testCustomerId, setTestCustomerId] = useState(allCustomers[0]?.id ?? "");
   const [activeTemplate, setActiveTemplate] = useState<"first" | "second" | "final">("first");
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   if (!agent) {
     return (
@@ -97,7 +121,7 @@ export default function AgentDetailPage({
   const Icon = agentIcons[agent.type] || Bot;
   const colors = agentColors[agent.type] || agentColors.lead_followup;
 
-  const agentActions = demoAgentActions
+  const agentActions = allAgentActions
     .filter((a) => a.agent_id === id)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -112,7 +136,7 @@ export default function AgentDetailPage({
   };
 
   // Template preview
-  const sampleCustomer = demoCustomers[0];
+  const sampleCustomer = allCustomers[0];
   const previewTemplate = (tmpl: string) => {
     return tmpl
       .replace("{{customer_name}}", sampleCustomer?.name ?? "John Doe")
@@ -402,7 +426,7 @@ export default function AgentDetailPage({
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Sample Customer</label>
                 <select value={testCustomerId} onChange={(e) => setTestCustomerId(e.target.value)} className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-[#0085FF] focus:outline-none">
-                  {demoCustomers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                  {allCustomers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
                 </select>
               </div>
               <p className="text-xs text-slate-400">This will send the actual template rendered with real customer data. It will not affect customer records.</p>

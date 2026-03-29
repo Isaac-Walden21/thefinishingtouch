@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Bot,
@@ -25,9 +25,8 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoAgents, demoAgentActions } from "@/lib/demo-data";
 import StatsCard from "@/components/StatsCard";
-import type { AIAgent, AgentType } from "@/lib/types";
+import type { AIAgent, AgentType, AgentAction } from "@/lib/types";
 
 const agentIcons: Record<AgentType, typeof Bot> = {
   lead_followup: UserPlus,
@@ -59,8 +58,21 @@ function formatTimeAgo(dateStr: string) {
 }
 
 export default function AgentsPage() {
-  const [agents, setAgents] = useState<AIAgent[]>(demoAgents);
+  const [agents, setAgents] = useState<AIAgent[]>([]);
+  const [allAgentActions, setAllAgentActions] = useState<AgentAction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [allPaused, setAllPaused] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/agents')
+      .then(r => r.json())
+      .then((data) => {
+        setAgents(data.agents ?? data);
+        setAllAgentActions(data.actions ?? []);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
   const [approvalAction, setApprovalAction] = useState<string | null>(null);
 
@@ -85,10 +97,16 @@ export default function AgentsPage() {
   const totalActionsWeek = agents.reduce((sum, a) => sum + a.actions_this_week, 0);
   const activeCount = agents.filter((a) => a.status === "active").length;
 
-  const pendingActions = demoAgentActions.filter((a) => a.status === "pending_approval");
-  const recentActions = [...demoAgentActions]
+  const pendingActions = allAgentActions.filter((a) => a.status === "pending_approval");
+  const recentActions = [...allAgentActions]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">

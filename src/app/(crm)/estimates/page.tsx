@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -22,10 +22,11 @@ import StatsCard from "@/components/StatsCard";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Pagination } from "@/components/ui/Pagination";
-import { demoEstimates, demoCustomers } from "@/lib/demo-data";
 import {
   ESTIMATE_STATUS_CONFIG,
   type EstimateStatus,
+  type Estimate,
+  type Customer,
 } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -60,6 +61,9 @@ function getExpirationInfo(createdAt: string): {
 }
 
 export default function EstimatesPage() {
+  const [allEstimates, setAllEstimates] = useState<Estimate[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EstimateStatus | "">("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -68,11 +72,24 @@ export default function EstimatesPage() {
   const [pageSize, setPageSize] = useState(25);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/estimates').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+    ])
+      .then(([estimatesData, customersData]) => {
+        setAllEstimates(estimatesData);
+        setAllCustomers(customersData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const estimates = useMemo(() => {
-    return demoEstimates
+    return allEstimates
       .map((est) => ({
         ...est,
-        customer: demoCustomers.find((c) => c.id === est.customer_id),
+        customer: allCustomers.find((c) => c.id === est.customer_id),
       }))
       .filter((est) => {
         const matchesSearch =
@@ -102,22 +119,22 @@ export default function EstimatesPage() {
       );
   }, [search, statusFilter, typeFilter, dateRange]);
 
-  const projectTypes = [...new Set(demoEstimates.map((e) => e.project_type))];
+  const projectTypes = [...new Set(allEstimates.map((e) => e.project_type))];
 
   // Stats
   const now = new Date();
-  const thisMonthEstimates = demoEstimates.filter((e) => {
+  const thisMonthEstimates = allEstimates.filter((e) => {
     const d = new Date(e.created_at);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const sentCount = demoEstimates.filter((e) =>
+  const sentCount = allEstimates.filter((e) =>
     ["sent", "accepted", "declined"].includes(e.status)
   ).length;
-  const acceptedCount = demoEstimates.filter(
+  const acceptedCount = allEstimates.filter(
     (e) => e.status === "accepted"
   ).length;
   const acceptanceRate = sentCount > 0 ? Math.round((acceptedCount / sentCount) * 100) : 0;
-  const activeQuotedValue = demoEstimates
+  const activeQuotedValue = allEstimates
     .filter((e) => !["declined"].includes(e.status))
     .reduce((s, e) => s + e.total, 0);
   const avgSize =
@@ -129,6 +146,12 @@ export default function EstimatesPage() {
       : 0;
 
   const paged = estimates.slice((page - 1) * pageSize, page * pageSize);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">

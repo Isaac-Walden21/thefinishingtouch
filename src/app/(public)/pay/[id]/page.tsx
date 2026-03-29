@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import { CreditCard, CheckCircle2, Loader2 } from "lucide-react";
-import { demoInvoices, demoCustomers } from "@/lib/demo-data";
+import type { Invoice, Customer } from "@/lib/types";
 
 const fmt = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -17,14 +17,26 @@ export default function CustomerPaymentPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const invoice = demoInvoices.find((i) => i.id === id);
-  const customer = invoice
-    ? demoCustomers.find((c) => c.id === invoice.customer_id)
-    : null;
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [processing, setProcessing] = useState(false);
   const [paid, setPaid] = useState(false);
   const [viewLogged, setViewLogged] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/pay/${id}`)
+      .then(r => r.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setInvoice(data.invoice ?? data);
+          setCustomer(data.customer ?? null);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
 
   // Log read receipt when customer views this page
   useEffect(() => {
@@ -33,6 +45,12 @@ export default function CustomerPaymentPage({
       fetch(`/api/invoices/${id}/view`, { method: "POST" }).catch(() => {});
     }
   }, [invoice, id, viewLogged]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen bg-[#F1F5F9]">
+      <div className="text-slate-500">Loading...</div>
+    </div>
+  );
 
   if (!invoice) {
     return (
