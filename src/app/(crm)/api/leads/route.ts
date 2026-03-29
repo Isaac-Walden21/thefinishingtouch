@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { logAudit, logActivity } from "@/lib/audit";
 
-// GET /api/invoices — list all invoices with customer join
+// GET /api/leads — list all leads with customer join
 export async function GET() {
   const { data, error } = await supabase
-    .from("invoices")
+    .from("leads")
     .select("*, customer:customers(id, name, email, phone)")
     .order("created_at", { ascending: false });
 
@@ -16,7 +16,7 @@ export async function GET() {
   return NextResponse.json(data ?? []);
 }
 
-// POST /api/invoices — create a new invoice
+// POST /api/leads — create a new lead
 export async function POST(request: Request) {
   const body = await request.json();
 
@@ -28,23 +28,17 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("invoices")
+    .from("leads")
     .insert({
       customer_id: body.customer_id,
-      estimate_id: body.estimate_id ?? null,
-      invoice_number: body.invoice_number,
-      status: body.status ?? "draft",
-      issue_date: body.issue_date ?? new Date().toISOString(),
-      due_date: body.due_date,
-      line_items: body.line_items ?? [],
-      subtotal: body.subtotal ?? 0,
-      tax_rate: body.tax_rate ?? 0,
-      tax_amount: body.tax_amount ?? 0,
-      discount: body.discount ?? 0,
-      total: body.total ?? 0,
+      status: body.status ?? "new",
+      source: body.source ?? null,
+      service_type: body.service_type ?? null,
+      estimated_value: body.estimated_value ?? null,
       notes: body.notes ?? null,
-      terms: body.terms ?? null,
-      payment_terms: body.payment_terms ?? null,
+      assigned_to: body.assigned_to ?? null,
+      priority: body.priority ?? "medium",
+      follow_up_date: body.follow_up_date ?? null,
     })
     .select("*")
     .single();
@@ -54,17 +48,18 @@ export async function POST(request: Request) {
   }
 
   await logAudit({
-    action: "invoice_created",
-    category: "invoices",
-    entity_type: "invoice",
+    action: "lead_created",
+    category: "leads",
+    entity_type: "lead",
     entity_id: data.id,
     new_value: data as Record<string, unknown>,
   });
 
   await logActivity({
+    lead_id: data.id,
     customer_id: body.customer_id,
     type: "note",
-    description: `Invoice ${data.invoice_number ?? data.id} created`,
+    description: "Lead created",
   });
 
   return NextResponse.json(data, { status: 201 });

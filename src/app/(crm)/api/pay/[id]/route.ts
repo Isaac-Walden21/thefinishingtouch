@@ -1,5 +1,25 @@
 import { NextResponse } from "next/server";
-import { demoInvoices } from "@/lib/demo-data";
+import { supabase } from "@/lib/supabase";
+
+// GET /api/pay/[id] — get invoice data for public payment page
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .select("*, customer:customers(id, name, email)")
+    .eq("id", id)
+    .single();
+
+  if (error || !invoice) {
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(invoice);
+}
 
 // POST /api/pay/[id] — create Stripe Checkout session for invoice payment
 export async function POST(
@@ -7,9 +27,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const invoice = demoInvoices.find((i) => i.id === id);
 
-  if (!invoice) {
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (invoiceError || !invoice) {
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
@@ -48,9 +73,11 @@ export async function POST(
             currency: "usd",
             product_data: {
               name: `Invoice ${invoice.invoice_number}`,
-              description: invoice.line_items
-                .map((li) => li.description)
-                .join(", "),
+              description: Array.isArray(invoice.line_items)
+                ? invoice.line_items
+                    .map((li: { description?: string }) => li.description)
+                    .join(", ")
+                : "",
             },
             unit_amount: Math.round(invoice.total * 100),
           },
