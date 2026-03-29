@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -17,8 +17,7 @@ import clsx from "clsx";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import SearchInput from "@/components/ui/SearchInput";
-import { demoJobWalks, demoJobWalkPhotos, demoCustomers } from "@/lib/demo-data";
-import { JOB_WALK_STATUS_CONFIG, type JobWalkStatus } from "@/lib/types";
+import { JOB_WALK_STATUS_CONFIG, type JobWalkStatus, type JobWalk, type JobWalkPhoto, type Customer } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 
 const PRIORITY_ICONS = {
@@ -32,15 +31,32 @@ function getTotalSqft(areas: { length: number; width: number }[]): number {
 }
 
 export default function JobWalkListPage() {
+  const [allJobWalks, setAllJobWalks] = useState<JobWalk[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [allPhotos, setAllPhotos] = useState<JobWalkPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<JobWalkStatus | "">("");
 
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/job-walks').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+    ])
+      .then(([jobWalksData, customersData]) => {
+        setAllJobWalks(jobWalksData);
+        setAllCustomers(customersData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const jobWalks = useMemo(() => {
-    return demoJobWalks
+    return allJobWalks
       .map((jw) => ({
         ...jw,
-        customer: demoCustomers.find((c) => c.id === jw.customer_id),
-        photos: demoJobWalkPhotos.filter((p) => p.job_walk_id === jw.id),
+        customer: allCustomers.find((c) => c.id === jw.customer_id),
+        photos: allPhotos.filter((p) => p.job_walk_id === jw.id),
       }))
       .filter((jw) => {
         const matchesSearch =
@@ -54,6 +70,12 @@ export default function JobWalkListPage() {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
   }, [search, statusFilter]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">

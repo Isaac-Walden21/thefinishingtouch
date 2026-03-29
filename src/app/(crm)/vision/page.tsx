@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Upload,
@@ -19,8 +19,8 @@ import {
   ChevronDown,
   Save,
 } from "lucide-react";
-import { demoCustomers, demoVisionProjects } from "@/lib/demo-data";
 import { PROJECT_TYPES } from "@/lib/types";
+import type { Customer, VisionProject } from "@/lib/types";
 import type { Annotation } from "@/lib/types";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import AnnotationCanvas from "@/components/AnnotationCanvas";
@@ -53,6 +53,21 @@ const fmt = new Intl.NumberFormat("en-US", {
 });
 
 export default function VisionStudioPage() {
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [visionProjects, setVisionProjects] = useState<VisionProject[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/vision/portfolio').then(r => r.json()),
+    ])
+      .then(([customersData, projectsData]) => {
+        setAllCustomers(customersData);
+        setVisionProjects(projectsData);
+      })
+      .catch(console.error);
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -230,7 +245,7 @@ export default function VisionStudioPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Link to Customer (optional)</label>
               <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className={selectClass}>
                 <option value="">Select a customer...</option>
-                {demoCustomers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                {allCustomers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </select>
             </div>
             <button
@@ -493,11 +508,11 @@ export default function VisionStudioPage() {
       </div>
 
       {/* Recent Vision Projects */}
-      {demoVisionProjects.length > 0 && !hasResult && (
+      {visionProjects.length > 0 && !hasResult && (
         <div className="mt-12">
           <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Recent Visualizations</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {demoVisionProjects.map((proj) => (
+            {visionProjects.map((proj) => (
               <div key={proj.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 transition-colors hover:border-[#0085FF]/30">
                 <div className="flex gap-3 mb-3">
                   <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-[#0085FF]/10 to-purple-100 flex items-center justify-center flex-shrink-0">

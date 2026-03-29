@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -23,8 +23,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import { demoCustomers, demoLeads, demoInvoices, demoActivities } from "@/lib/demo-data";
-import { LEAD_STATUS_CONFIG, type Customer } from "@/lib/types";
+import { LEAD_STATUS_CONFIG, type Customer, type Lead, type Invoice, type Activity } from "@/lib/types";
 import { formatCurrency, formatDaysAgo, formatDate } from "@/lib/format";
 
 type SortKey = "name" | "city" | "service_type" | "status" | "leads" | "lifetime_value" | "last_contact";
@@ -50,6 +49,11 @@ const demoTags: Record<string, string[]> = {
 };
 
 export default function CustomersPage() {
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [serviceFilter, setServiceFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
@@ -67,20 +71,37 @@ export default function CustomersPage() {
   const [editValue, setEditValue] = useState("");
   const [tags, setTags] = useState<Record<string, string[]>>(demoTags);
 
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/leads').then(r => r.json()),
+      fetch('/api/invoices').then(r => r.json()),
+      fetch('/api/activities').then(r => r.json()),
+    ])
+      .then(([customersData, leadsData, invoicesData, activitiesData]) => {
+        setAllCustomers(customersData);
+        setAllLeads(leadsData);
+        setAllInvoices(invoicesData);
+        setAllActivities(activitiesData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   // Computed data
   const lifetimeValues = useMemo(() => {
     const map = new Map<string, number>();
-    demoInvoices
+    allInvoices
       .filter((inv) => inv.status === "paid")
       .forEach((inv) => {
         map.set(inv.customer_id, (map.get(inv.customer_id) ?? 0) + inv.total);
       });
     return map;
-  }, []);
+  }, [allInvoices]);
 
   const lastContactDates = useMemo(() => {
     const map = new Map<string, string>();
-    demoActivities.forEach((a) => {
+    allActivities.forEach((a) => {
       if (a.customer_id) {
         const existing = map.get(a.customer_id);
         if (!existing || new Date(a.created_at) > new Date(existing)) {
@@ -89,14 +110,14 @@ export default function CustomersPage() {
       }
     });
     return map;
-  }, []);
+  }, [allActivities]);
 
   function getCustomerLeadCount(customerId: string) {
-    return demoLeads.filter((l) => l.customer_id === customerId).length;
+    return allLeads.filter((l) => l.customer_id === customerId).length;
   }
 
   function getLatestLeadStatus(customerId: string) {
-    const customerLeads = demoLeads
+    const customerLeads = allLeads
       .filter((l) => l.customer_id === customerId)
       .sort(
         (a, b) =>
@@ -106,7 +127,7 @@ export default function CustomersPage() {
   }
 
   const filtered = useMemo(() => {
-    return demoCustomers.filter((c) => {
+    return allCustomers.filter((c) => {
       if (search) {
         const q = search.toLowerCase();
         const match =
@@ -231,11 +252,17 @@ export default function CustomersPage() {
   const allTags = [...new Set(Object.values(tags).flat())];
   const hasFilters = search || serviceFilter || sourceFilter || tagFilter;
 
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
+
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
       <PageHeader
         title="Customers"
-        subtitle={`Showing ${filtered.length} of ${demoCustomers.length} customers`}
+        subtitle={`Showing ${filtered.length} of ${allCustomers.length} customers`}
         actions={
           <div className="flex items-center gap-3">
             <button

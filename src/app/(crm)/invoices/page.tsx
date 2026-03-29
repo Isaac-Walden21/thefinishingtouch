@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -17,9 +17,8 @@ import {
   Send,
   X,
 } from "lucide-react";
-import { demoInvoices, demoCustomers, demoPayments } from "@/lib/demo-data";
 import { INVOICE_STATUS_CONFIG } from "@/lib/types";
-import type { InvoiceStatus, PaymentMethod } from "@/lib/types";
+import type { InvoiceStatus, PaymentMethod, Invoice, Customer, Payment } from "@/lib/types";
 import StatsCard from "@/components/StatsCard";
 import RevenueChart from "@/components/RevenueChart";
 import AgingReport from "@/components/AgingReport";
@@ -33,6 +32,26 @@ const fmt = new Intl.NumberFormat("en-US", {
 type DateRange = "this_month" | "last_30" | "last_90" | "this_year" | "all";
 
 export default function InvoicesPage() {
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/invoices').then(r => r.json()),
+      fetch('/api/payments').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+    ])
+      .then(([invoicesData, paymentsData, customersData]) => {
+        setAllInvoices(invoicesData);
+        setAllPayments(paymentsData);
+        setAllCustomers(customersData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "">("");
   const [dateRange, setDateRange] = useState<DateRange>("all");
@@ -46,10 +65,10 @@ export default function InvoicesPage() {
 
   const invoices = useMemo(() => {
     const now = new Date();
-    return demoInvoices
+    return allInvoices
       .map((inv) => ({
         ...inv,
-        customer: demoCustomers.find((c) => c.id === inv.customer_id),
+        customer: allCustomers.find((c) => c.id === inv.customer_id),
       }))
       .filter((inv) => {
         const customerName = inv.customer?.name ?? "";
@@ -92,11 +111,11 @@ export default function InvoicesPage() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [search, statusFilter, dateRange, agingBucket]);
 
-  const totalOutstanding = demoInvoices
+  const totalOutstanding = allInvoices
     .filter((i) => ["sent", "viewed", "partial", "overdue"].includes(i.status))
     .reduce((sum, i) => sum + i.total, 0);
 
-  const totalPaidThisMonth = demoPayments
+  const totalPaidThisMonth = allPayments
     .filter((p) => {
       const d = new Date(p.created_at);
       const now = new Date();
@@ -104,10 +123,10 @@ export default function InvoicesPage() {
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const overdueInvoices = demoInvoices.filter((i) => i.status === "overdue");
+  const overdueInvoices = allInvoices.filter((i) => i.status === "overdue");
   const overdueTotal = overdueInvoices.reduce((sum, i) => sum + i.total, 0);
 
-  const paidInvoices = demoInvoices.filter((i) => i.status === "paid" && i.sent_at && i.paid_at);
+  const paidInvoices = allInvoices.filter((i) => i.status === "paid" && i.sent_at && i.paid_at);
   const avgDaysToPay =
     paidInvoices.length > 0
       ? Math.round(
@@ -153,6 +172,12 @@ export default function InvoicesPage() {
   if (dateRange !== "all") activeFilters.push(dateRange.replace("_", " "));
   if (agingBucket) activeFilters.push(`Aging: ${agingBucket}`);
 
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
+
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
       <div className="mb-8 flex items-center justify-between">
@@ -195,9 +220,9 @@ export default function InvoicesPage() {
 
       {/* Revenue Chart & Aging */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <RevenueChart payments={demoPayments} />
+        <RevenueChart payments={allPayments} />
         <AgingReport
-          invoices={demoInvoices}
+          invoices={allInvoices}
           onBucketClick={(bucket) => setAgingBucket(agingBucket === bucket ? null : bucket)}
           activeBucket={agingBucket}
         />

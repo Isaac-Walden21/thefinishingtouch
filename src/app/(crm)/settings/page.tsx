@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   Users,
@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoTeam } from "@/lib/demo-data";
 import type {
   CompanySettings,
   IntegrationConfig,
@@ -85,7 +84,21 @@ const inputClass =
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("company");
   const [companySettings, setCompanySettings] = useState(defaultCompanySettings);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(demoTeam);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/team-members').then(r => r.json()),
+      fetch('/api/settings/company').then(r => r.json()).catch(() => null),
+    ])
+      .then(([teamData, companyData]) => {
+        setTeamMembers(teamData);
+        if (companyData && !companyData.error) {
+          setCompanySettings(companyData);
+        }
+      })
+      .catch(console.error);
+  }, []);
   const [defaultMargin, setDefaultMargin] = useState("25");
   const [defaultExpiration, setDefaultExpiration] = useState("30");
   const [taxRate, setTaxRate] = useState("7");

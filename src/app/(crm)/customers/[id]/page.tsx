@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -33,17 +33,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Tabs } from "@/components/ui/Tabs";
 import { Modal } from "@/components/ui/Modal";
 import {
-  demoCustomers,
-  demoLeads,
-  demoActivities,
-  demoEstimates,
-  demoInvoices,
-} from "@/lib/demo-data";
-import {
   LEAD_STATUS_CONFIG,
   ESTIMATE_STATUS_CONFIG,
   INVOICE_STATUS_CONFIG,
   type ActivityType,
+  type Customer,
+  type Lead,
+  type Activity,
+  type Estimate,
+  type Invoice,
 } from "@/lib/types";
 import { formatCurrency, formatDate, formatTimeAgo } from "@/lib/format";
 
@@ -63,11 +61,12 @@ export default function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const customer = demoCustomers.find((c) => c.id === id);
-  const customerLeads = demoLeads.filter((l) => l.customer_id === id);
-  const customerActivities = demoActivities.filter((a) => a.customer_id === id);
-  const customerEstimates = demoEstimates.filter((e) => e.customer_id === id);
-  const customerInvoices = demoInvoices.filter((i) => i.customer_id === id);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customerLeads, setCustomerLeads] = useState<Lead[]>([]);
+  const [customerActivities, setCustomerActivities] = useState<Activity[]>([]);
+  const [customerEstimates, setCustomerEstimates] = useState<Estimate[]>([]);
+  const [customerInvoices, setCustomerInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [activityFilter, setActivityFilter] = useState("all");
   const [addActivityType, setAddActivityType] = useState<"call" | "email" | "note">("note");
@@ -80,6 +79,31 @@ export default function CustomerDetailPage({
   const [invoicesOpen, setInvoicesOpen] = useState(false);
   const [visionOpen, setVisionOpen] = useState(false);
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/leads').then(r => r.json()),
+      fetch(`/api/activities?customer_id=${id}`).then(r => r.json()),
+      fetch('/api/estimates').then(r => r.json()),
+      fetch('/api/invoices').then(r => r.json()),
+    ])
+      .then(([customersData, leadsData, activitiesData, estimatesData, invoicesData]) => {
+        setCustomer(customersData.find((c: Customer) => c.id === id) ?? null);
+        setCustomerLeads(leadsData.filter((l: Lead) => l.customer_id === id));
+        setCustomerActivities(activitiesData);
+        setCustomerEstimates(estimatesData.filter((e: Estimate) => e.customer_id === id));
+        setCustomerInvoices(invoicesData.filter((i: Invoice) => i.customer_id === id));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   if (!customer) {
     return (

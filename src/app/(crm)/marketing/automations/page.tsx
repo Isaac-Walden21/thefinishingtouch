@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Workflow,
@@ -20,8 +20,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoAutomations } from "@/lib/demo-data";
 import { AUTOMATION_STATUS_CONFIG } from "@/lib/types";
+import type { Automation } from "@/lib/types";
 
 const MARKETING_TABS = [
   { href: "/marketing/contacts", label: "Contacts" },
@@ -41,12 +41,21 @@ const TRIGGERS = [
 ];
 
 export default function MarketingAutomationsPage() {
+  const [allAutomations, setAllAutomations] = useState<Automation[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [enrolledView, setEnrolledView] = useState<string | null>(null);
-  const [statuses, setStatuses] = useState<Record<string, string>>(
-    Object.fromEntries(demoAutomations.map((a) => [a.id, a.status]))
-  );
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [showCreate, setShowCreate] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/marketing/automations')
+      .then(r => r.json())
+      .then((data) => {
+        setAllAutomations(data);
+        setStatuses(Object.fromEntries(data.map((a: Automation) => [a.id, a.status])));
+      })
+      .catch(console.error);
+  }, []);
 
   const toggleStatus = (id: string) => {
     setStatuses((prev) => ({ ...prev, [id]: prev[id] === "active" ? "paused" : "active" }));
@@ -75,7 +84,7 @@ export default function MarketingAutomationsPage() {
 
       {/* Automations list */}
       <div className="space-y-6">
-        {demoAutomations.map((automation) => {
+        {allAutomations.map((automation) => {
           const currentStatus = statuses[automation.id] ?? automation.status;
           const statusConfig = AUTOMATION_STATUS_CONFIG[currentStatus as keyof typeof AUTOMATION_STATUS_CONFIG] ?? AUTOMATION_STATUS_CONFIG.draft;
           const isExpanded = expandedId === automation.id;

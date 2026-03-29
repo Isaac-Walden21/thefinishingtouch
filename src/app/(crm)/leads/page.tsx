@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -25,8 +25,7 @@ import clsx from "clsx";
 import { SlideOver } from "@/components/SlideOver";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/Badge";
-import { demoLeads, demoCustomers, demoTeam } from "@/lib/demo-data";
-import type { Lead, LeadStatus, Customer } from "@/lib/types";
+import type { Lead, LeadStatus, Customer, TeamMember } from "@/lib/types";
 import { LEAD_STATUS_CONFIG, PIPELINE_STAGES } from "@/lib/types";
 import { formatCurrency, formatTimeAgo } from "@/lib/format";
 
@@ -59,7 +58,10 @@ const DATE_RANGE_OPTIONS = [
 ];
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>(demoLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
   const [projectTypeFilter, setProjectTypeFilter] = useState("");
@@ -72,13 +74,34 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [noteText, setNoteText] = useState("");
 
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/leads').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/team-members').then(r => r.json()),
+    ])
+      .then(([leadsData, customersData, teamData]) => {
+        setLeads(leadsData);
+        setCustomers(customersData);
+        setTeam(teamData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const customerMap = useMemo(
-    () => new Map(demoCustomers.map((c) => [c.id, c])),
-    []
+    () => new Map(customers.map((c) => [c.id, c])),
+    [customers]
   );
   const teamMap = useMemo(
-    () => new Map(demoTeam.map((t) => [t.id, t])),
-    []
+    () => new Map(team.map((t) => [t.id, t])),
+    [team]
+  );
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
   );
 
   const hasFilters = search || assigneeFilter.length > 0 || projectTypeFilter || sourceFilter || dateRange;
@@ -228,7 +251,7 @@ export default function LeadsPage() {
           className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-brand focus:outline-none"
         >
           <option value="">Assignee</option>
-          {demoTeam.map((t) => (
+          {team.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
@@ -329,7 +352,7 @@ export default function LeadsPage() {
           <div className="flex items-center gap-2 ml-auto">
             <select className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:outline-none">
               <option value="">Reassign to...</option>
-              {demoTeam.map((t) => (
+              {team.map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>

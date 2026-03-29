@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -13,14 +13,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import ActivityTimeline from "@/components/ActivityTimeline";
-import {
-  demoLeads,
-  demoCustomers,
-  demoActivities,
-  demoTeam,
-} from "@/lib/demo-data";
 import { LEAD_STATUS_CONFIG, PIPELINE_STAGES } from "@/lib/types";
-import type { LeadStatus } from "@/lib/types";
+import type { Lead, Customer, Activity, TeamMember, LeadStatus } from "@/lib/types";
 
 export default function LeadDetailPage({
   params,
@@ -28,19 +22,41 @@ export default function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const lead = demoLeads.find((l) => l.id === id);
-  const customer = lead
-    ? demoCustomers.find((c) => c.id === lead.customer_id)
-    : null;
-  const activities = demoActivities.filter((a) => a.lead_id === id);
-  const assignee = lead
-    ? demoTeam.find((t) => t.id === lead.assigned_to)
-    : null;
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [assignee, setAssignee] = useState<TeamMember | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [status, setStatus] = useState<LeadStatus>(
-    lead?.status ?? "new"
-  );
+  const [status, setStatus] = useState<LeadStatus>("new");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/leads').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+      fetch(`/api/activities?lead_id=${id}`).then(r => r.json()),
+      fetch('/api/team-members').then(r => r.json()),
+    ])
+      .then(([leadsData, customersData, activitiesData, teamData]) => {
+        const foundLead = leadsData.find((l: Lead) => l.id === id);
+        setLead(foundLead ?? null);
+        if (foundLead) {
+          setStatus(foundLead.status);
+          setCustomer(customersData.find((c: Customer) => c.id === foundLead.customer_id) ?? null);
+          setAssignee(teamData.find((t: TeamMember) => t.id === foundLead.assigned_to) ?? null);
+        }
+        setActivities(activitiesData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   if (!lead || !customer) {
     return (

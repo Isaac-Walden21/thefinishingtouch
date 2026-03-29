@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -21,9 +21,8 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
-import { demoInvoices, demoCustomers, demoPayments, demoEstimates } from "@/lib/demo-data";
 import { INVOICE_STATUS_CONFIG } from "@/lib/types";
-import type { InvoiceStatus, PaymentMethod, InvoiceLineItem } from "@/lib/types";
+import type { InvoiceStatus, PaymentMethod, InvoiceLineItem, Invoice, Customer, Payment, Estimate } from "@/lib/types";
 import PaymentTimeline from "@/components/PaymentTimeline";
 
 const fmt = new Intl.NumberFormat("en-US", {
@@ -48,24 +47,17 @@ export default function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const invoice = demoInvoices.find((i) => i.id === id);
-  const customer = invoice
-    ? demoCustomers.find((c) => c.id === invoice.customer_id)
-    : null;
-  const payments = demoPayments.filter((p) => p.invoice_id === id);
-  const linkedEstimate = invoice?.estimate_id
-    ? demoEstimates.find((e) => e.id === invoice.estimate_id)
-    : null;
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [linkedEstimate, setLinkedEstimate] = useState<Estimate | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [status, setStatus] = useState<InvoiceStatus>(invoice?.status || "draft");
-  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>(
-    invoice?.line_items || [newLineItem()]
-  );
-  const [taxRate, setTaxRate] = useState(
-    invoice ? (invoice.tax_rate * 100).toFixed(0) : "7"
-  );
+  const [status, setStatus] = useState<InvoiceStatus>("draft");
+  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([newLineItem()]);
+  const [taxRate, setTaxRate] = useState("7");
   const [internalNotes, setInternalNotes] = useState("");
-  const [externalNotes, setExternalNotes] = useState(invoice?.notes || "");
+  const [externalNotes, setExternalNotes] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -76,6 +68,37 @@ export default function InvoiceDetailPage({
   const [splitPercent, setSplitPercent] = useState(50);
   const [showPreview, setShowPreview] = useState(true);
   const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/invoices/${id}`).then(r => r.json()),
+      fetch(`/api/payments?invoice_id=${id}`).then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/estimates').then(r => r.json()),
+    ])
+      .then(([invoiceData, paymentsData, customersData, estimatesData]) => {
+        if (invoiceData && !invoiceData.error) {
+          setInvoice(invoiceData);
+          setStatus(invoiceData.status || "draft");
+          setLineItems(invoiceData.line_items || [newLineItem()]);
+          setTaxRate(invoiceData.tax_rate ? (invoiceData.tax_rate * 100).toFixed(0) : "7");
+          setExternalNotes(invoiceData.notes || "");
+          setCustomer(customersData.find((c: Customer) => c.id === invoiceData.customer_id) ?? null);
+          if (invoiceData.estimate_id) {
+            setLinkedEstimate(estimatesData.find((e: Estimate) => e.id === invoiceData.estimate_id) ?? null);
+          }
+        }
+        setPayments(paymentsData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   if (!invoice) {
     return (

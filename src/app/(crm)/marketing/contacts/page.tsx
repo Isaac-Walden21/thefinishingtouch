@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -17,7 +17,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoMarketingContacts } from "@/lib/demo-data";
 import type { MarketingContact } from "@/lib/types";
 
 const ALL_TAGS = [
@@ -35,6 +34,12 @@ const MARKETING_TABS = [
 ];
 
 export default function MarketingContactsPage() {
+  const [allContacts, setAllContacts] = useState<MarketingContact[]>([]);
+
+  useEffect(() => {
+    fetch('/api/marketing/contacts').then(r => r.json()).then(setAllContacts).catch(console.error);
+  }, []);
+
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
@@ -44,14 +49,14 @@ export default function MarketingContactsPage() {
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
-  const filtered = demoMarketingContacts.filter((c) => {
+  const filtered = allContacts.filter((c) => {
     const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
     const matchTags = selectedTags.length === 0 || selectedTags.some((t) => c.tags.includes(t));
     const matchStatus = statusFilter === "all" || (statusFilter === "subscribed" && c.subscribed) || (statusFilter === "unsubscribed" && !c.subscribed);
     return matchSearch && matchTags && matchStatus;
   });
 
-  const subscribedCount = demoMarketingContacts.filter((c) => c.subscribed).length;
+  const subscribedCount = allContacts.filter((c) => c.subscribed).length;
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
@@ -74,7 +79,7 @@ export default function MarketingContactsPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A]" style={{ fontFamily: "var(--font-work-sans)" }}>Marketing Contacts</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {demoMarketingContacts.length} contacts -- {subscribedCount} subscribed
+            {allContacts.length} contacts -- {subscribedCount} subscribed
             {lastSynced && <span className="ml-2 text-emerald-600">Last synced: {lastSynced.toLocaleTimeString()}</span>}
           </p>
         </div>
@@ -123,7 +128,7 @@ export default function MarketingContactsPage() {
       </div>
 
       {/* Result count */}
-      <p className="mb-4 text-xs text-slate-400">Showing {filtered.length} of {demoMarketingContacts.length} contacts</p>
+      <p className="mb-4 text-xs text-slate-400">Showing {filtered.length} of {allContacts.length} contacts</p>
 
       {showFilter && (
         <div className="mb-4 rounded-xl border border-slate-200 bg-white shadow-sm p-4">

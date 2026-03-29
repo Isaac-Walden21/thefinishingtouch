@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Send,
@@ -18,8 +18,8 @@ import {
   Mail,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoCampaigns, demoEmailTemplates, demoMarketingContacts } from "@/lib/demo-data";
 import { CAMPAIGN_STATUS_CONFIG } from "@/lib/types";
+import type { Campaign, EmailTemplate, MarketingContact } from "@/lib/types";
 
 const MARKETING_TABS = [
   { href: "/marketing/contacts", label: "Contacts" },
@@ -34,6 +34,24 @@ function formatDate(dateStr: string) {
 }
 
 export default function MarketingCampaignsPage() {
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
+  const [allTemplates, setAllTemplates] = useState<EmailTemplate[]>([]);
+  const [allContacts, setAllContacts] = useState<MarketingContact[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/marketing/campaigns').then(r => r.json()),
+      fetch('/api/marketing/templates').then(r => r.json()),
+      fetch('/api/marketing/contacts').then(r => r.json()),
+    ])
+      .then(([campaignsData, templatesData, contactsData]) => {
+        setAllCampaigns(campaignsData);
+        setAllTemplates(templatesData);
+        setAllContacts(contactsData);
+      })
+      .catch(console.error);
+  }, []);
+
   const [filter, setFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "email" | "sms">("all");
   const [showDetail, setShowDetail] = useState<string | null>(null);
@@ -42,8 +60,8 @@ export default function MarketingCampaignsPage() {
   const [campaignType, setCampaignType] = useState<"email" | "sms">("email");
   const [abTest, setAbTest] = useState(false);
 
-  const filtered = demoCampaigns.filter((c) => filter === "all" || c.status === filter);
-  const templateMap = new Map(demoEmailTemplates.map((t) => [t.id, t]));
+  const filtered = allCampaigns.filter((c) => filter === "all" || c.status === filter);
+  const templateMap = new Map(allTemplates.map((t) => [t.id, t]));
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
@@ -209,7 +227,7 @@ export default function MarketingCampaignsPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">Select Template</label>
                     <select className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-[#0085FF] focus:outline-none">
                       <option value="">Choose a template...</option>
-                      {demoEmailTemplates.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
+                      {allTemplates.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
                     </select>
                   </div>
                 )}
@@ -225,7 +243,7 @@ export default function MarketingCampaignsPage() {
                     <button key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 hover:bg-[#0085FF] hover:text-white">{tag}</button>
                   ))}
                 </div>
-                <p className="text-sm text-slate-600">Matching contacts: <span className="font-medium">{demoMarketingContacts.length}</span></p>
+                <p className="text-sm text-slate-600">Matching contacts: <span className="font-medium">{allContacts.length}</span></p>
               </div>
             )}
 
@@ -257,7 +275,7 @@ export default function MarketingCampaignsPage() {
                 <p className="text-sm font-medium text-slate-700">Review Campaign</p>
                 <div className="rounded-lg border border-slate-200 p-4 space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-slate-500">Type</span><span className="text-slate-700 capitalize">{campaignType}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Recipients</span><span className="text-slate-700">{demoMarketingContacts.length} contacts</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Recipients</span><span className="text-slate-700">{allContacts.length} contacts</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">A/B Test</span><span className="text-slate-700">{abTest ? "Enabled" : "Disabled"}</span></div>
                 </div>
               </div>

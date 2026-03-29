@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   GitPullRequestArrow,
@@ -32,34 +32,61 @@ import { PageHeader } from "@/components/PageHeader";
 import { RevenueGoalTracker } from "@/components/RevenueGoalTracker";
 import { TodaySchedule } from "@/components/TodaySchedule";
 import { WeatherWidget } from "@/components/WeatherWidget";
-import {
-  demoLeads,
-  demoActivities,
-  demoCustomers,
-  demoInvoices,
-  demoAgents,
-  demoAgentActions,
-  demoCalendarEvents,
-} from "@/lib/demo-data";
 import { LEAD_STATUS_CONFIG, PIPELINE_STAGES } from "@/lib/types";
+import type { Lead, Activity, Customer, Invoice, AIAgent, AgentAction, CalendarEvent } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 
 export default function DashboardPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [agents, setAgents] = useState<AIAgent[]>([]);
+  const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/leads').then(r => r.json()),
+      fetch('/api/activities').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/invoices').then(r => r.json()),
+      fetch('/api/agents').then(r => r.json()),
+      fetch('/api/calendar/events').then(r => r.json()),
+    ])
+      .then(([leadsData, activitiesData, customersData, invoicesData, agentsData, eventsData]) => {
+        setLeads(leadsData);
+        setActivities(activitiesData);
+        setCustomers(customersData);
+        setInvoices(invoicesData);
+        setAgents(agentsData.agents ?? agentsData);
+        setAgentActions(agentsData.actions ?? []);
+        setCalendarEvents(eventsData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
+
   const now = new Date();
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
   const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
   const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
 
-  // ── Dismissed follow-ups ──
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-
   // ── Top row stats ──
-  const leadsThisMonth = demoLeads.filter((l) => {
+  const leadsThisMonth = leads.filter((l) => {
     const d = new Date(l.created_at);
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
   });
-  const leadsLastMonth = demoLeads.filter((l) => {
+  const leadsLastMonth = leads.filter((l) => {
     const d = new Date(l.created_at);
     return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
   });
@@ -72,21 +99,21 @@ export default function DashboardPage() {
         )
       : 100;
 
-  const quotesSent = demoLeads.filter(
+  const quotesSent = leads.filter(
     (l) =>
       l.quoted_amount !== null &&
       ["quoted", "booked", "in_progress", "completed"].includes(l.status)
   );
 
-  const jobsBooked = demoLeads.filter((l) =>
+  const jobsBooked = leads.filter((l) =>
     ["booked", "in_progress", "completed"].includes(l.status)
   );
 
-  const completedRevenue = demoLeads
+  const completedRevenue = leads
     .filter((l) => l.status === "completed")
     .reduce((sum, l) => sum + (l.quoted_amount ?? 0), 0);
 
-  const outstandingInvoices = demoInvoices
+  const outstandingInvoices = invoices
     .filter((inv) =>
       ["sent", "viewed", "partial", "overdue"].includes(inv.status)
     )
@@ -97,7 +124,7 @@ export default function DashboardPage() {
       ? Math.round((jobsBooked.length / quotesSent.length) * 100)
       : 0;
 
-  const completedJobs = demoLeads.filter((l) => l.status === "completed");
+  const completedJobs = leads.filter((l) => l.status === "completed");
   const avgJobSize =
     completedJobs.length > 0
       ? Math.round(
@@ -109,8 +136,8 @@ export default function DashboardPage() {
   // ── Pipeline summary ──
   const pipelineCounts = PIPELINE_STAGES.map((stage) => ({
     stage,
-    count: demoLeads.filter((l) => l.status === stage).length,
-    value: demoLeads
+    count: leads.filter((l) => l.status === stage).length,
+    value: leads
       .filter((l) => l.status === stage)
       .reduce((s, l) => s + (l.quoted_amount ?? 0), 0),
     config: LEAD_STATUS_CONFIG[stage],
@@ -118,17 +145,17 @@ export default function DashboardPage() {
   const maxPipelineCount = Math.max(...pipelineCounts.map((p) => p.count), 1);
 
   // ── Agent summary ──
-  const activeAgents = demoAgents.filter((a) => a.status === "active").length;
-  const agentActionsToday = demoAgents.reduce(
+  const activeAgents = agents.filter((a) => a.status === "active").length;
+  const agentActionsToday = agents.reduce(
     (sum, a) => sum + a.actions_today,
     0
   );
-  const pendingApprovals = demoAgentActions.filter(
+  const pendingApprovals = agentActions.filter(
     (a) => a.status === "pending_approval"
   ).length;
 
   // ── Activity feed ──
-  const recentActivities = [...demoActivities]
+  const recentActivities = [...activities]
     .sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -137,7 +164,7 @@ export default function DashboardPage() {
 
   // ── Today's events ──
   const today = new Date();
-  const todayEvents = demoCalendarEvents.filter((e) => {
+  const todayEvents = calendarEvents.filter((e) => {
     const d = new Date(e.start_time);
     return (
       d.getDate() === today.getDate() &&
@@ -147,9 +174,9 @@ export default function DashboardPage() {
   });
 
   // ── Follow-ups ──
-  const customerMap = new Map(demoCustomers.map((c) => [c.id, c]));
+  const customerMap = new Map(customers.map((c) => [c.id, c]));
   const followUps = [
-    ...demoLeads
+    ...leads
       .filter((l) => l.status === "new")
       .map((l) => ({
         id: l.id,
@@ -161,7 +188,7 @@ export default function DashboardPage() {
         color: "text-brand",
         bgColor: "bg-brand/10",
       })),
-    ...demoLeads
+    ...leads
       .filter((l) => l.status === "quoted")
       .map((l) => ({
         id: l.id,
@@ -173,7 +200,7 @@ export default function DashboardPage() {
         color: "text-orange-600",
         bgColor: "bg-orange-50",
       })),
-    ...demoAgentActions
+    ...agentActions
       .filter((a) => a.status === "pending_approval")
       .map((a) => ({
         id: a.id,
@@ -185,7 +212,7 @@ export default function DashboardPage() {
         color: "text-purple-600",
         bgColor: "bg-purple-50",
       })),
-    ...demoInvoices
+    ...invoices
       .filter((inv) => inv.status === "overdue")
       .map((inv) => ({
         id: inv.id,
@@ -471,7 +498,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="space-y-2">
-            {demoAgentActions
+            {agentActions
               .filter((a) => a.status === "pending_approval")
               .slice(0, 3)
               .map((action) => (

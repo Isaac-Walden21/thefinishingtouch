@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,9 +17,8 @@ import {
   Save,
 } from "lucide-react";
 import clsx from "clsx";
-import { demoCalendarEvents, demoCustomers, demoTeam } from "@/lib/demo-data";
 import { EVENT_TYPE_CONFIG, PROJECT_TYPES } from "@/lib/types";
-import type { CalendarEvent, EventType, EventStatus } from "@/lib/types";
+import type { CalendarEvent, EventType, EventStatus, Customer, TeamMember } from "@/lib/types";
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7);
 const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -75,10 +74,28 @@ function getEventColor(type: EventType): string {
 }
 
 export default function CalendarPage() {
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [allTeam, setAllTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"week" | "month">("week");
   const [teamLanes, setTeamLanes] = useState(false);
-  const [events, setEvents] = useState<CalendarEvent[]>(demoCalendarEvents);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/calendar/events').then(r => r.json()),
+      fetch('/api/customers').then(r => r.json()),
+      fetch('/api/team-members').then(r => r.json()),
+    ])
+      .then(([eventsData, customersData, teamData]) => {
+        setEvents(eventsData);
+        setAllCustomers(customersData);
+        setAllTeam(teamData);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createDate, setCreateDate] = useState<Date | null>(null);
@@ -89,7 +106,7 @@ export default function CalendarPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newType, setNewType] = useState<EventType>("quote_visit");
   const [newCustomerId, setNewCustomerId] = useState("");
-  const [newAssignedTo, setNewAssignedTo] = useState(demoTeam[0]?.id || "");
+  const [newAssignedTo, setNewAssignedTo] = useState(allTeam[0]?.id || "");
   const [newDescription, setNewDescription] = useState("");
   const [newStartTime, setNewStartTime] = useState("09:00");
   const [newEndTime, setNewEndTime] = useState("10:00");
@@ -134,7 +151,7 @@ export default function CalendarPage() {
   function handleCreateEvent() {
     if (!createDate) return;
     const dateStr = createDate.toISOString().split("T")[0];
-    const customer = newCustomerId ? demoCustomers.find((c) => c.id === newCustomerId) : null;
+    const customer = newCustomerId ? allCustomers.find((c) => c.id === newCustomerId) : null;
     const newEvent: CalendarEvent = {
       id: `ev-${Date.now()}`,
       team_member_id: newAssignedTo,
@@ -164,7 +181,7 @@ export default function CalendarPage() {
     setNewType("quote_visit");
     setNewCustomerId("");
     setNewDescription("");
-    setNewAssignedTo(demoTeam[0]?.id || "");
+    setNewAssignedTo(allTeam[0]?.id || "");
   }
 
   // Count site visits for route optimization
@@ -174,6 +191,12 @@ export default function CalendarPage() {
   const monthLabel = view === "week"
     ? weekDates[0].toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
@@ -522,7 +545,7 @@ export default function CalendarPage() {
                     className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
                   >
                     <option value="">Select customer...</option>
-                    {demoCustomers.map((c) => (
+                    {allCustomers.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -536,7 +559,7 @@ export default function CalendarPage() {
                   onChange={(e) => setNewAssignedTo(e.target.value)}
                   className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-700 focus:border-[#0085FF] focus:outline-none"
                 >
-                  {demoTeam.map((m) => (
+                  {allTeam.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>
