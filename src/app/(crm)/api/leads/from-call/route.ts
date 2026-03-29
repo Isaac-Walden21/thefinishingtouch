@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validateApiKey, rateLimit, unauthorizedResponse, rateLimitedResponse } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, unauthorizedResponse, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
 
 export async function POST(request: NextRequest) {
@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
   const rl = rateLimit("leads-from-call", 30);
   if (!rl.allowed) return rateLimitedResponse();
 
-  const body = await request.json();
-  const { customer_name, customer_phone, message, service_type, vapi_call_id } = body;
+  const raw = await request.json();
+  const body = extractVapiArgs(raw);
+  const { customer_name, customer_phone, message, service_type, vapi_call_id } = body as Record<string, string | undefined>;
 
   if (!customer_name || !customer_phone) {
     return NextResponse.json(

@@ -50,3 +50,25 @@ export function rateLimitedResponse() {
     }
   );
 }
+
+/**
+ * Extract function arguments from a Vapi tool call payload.
+ * Vapi sends: { message: { toolCallList: [{ function: { arguments: "{...}" } }] } }
+ * Falls back to treating the body itself as flat arguments (for direct API calls).
+ */
+export function extractVapiArgs(body: Record<string, unknown>): Record<string, unknown> {
+  // Vapi nested format
+  const message = body.message as Record<string, unknown> | undefined;
+  if (message) {
+    const toolCallList = (message.toolCallList ?? message.toolCalls) as Array<Record<string, unknown>> | undefined;
+    if (toolCallList && toolCallList.length > 0) {
+      const fn = toolCallList[0].function as Record<string, unknown> | undefined;
+      if (fn?.arguments) {
+        const args = typeof fn.arguments === "string" ? JSON.parse(fn.arguments) : fn.arguments;
+        return { ...args, _vapiToolCallId: toolCallList[0].id };
+      }
+    }
+  }
+  // Flat body fallback (direct API calls)
+  return body;
+}

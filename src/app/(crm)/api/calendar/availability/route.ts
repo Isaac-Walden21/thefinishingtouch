@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey, rateLimit, rateLimitedResponse } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
 import { getAvailableSlots } from "@/lib/availability";
 
 // GET /api/calendar/availability?start=YYYY-MM-DD&end=YYYY-MM-DD
@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
     if (!rl.allowed) return rateLimitedResponse();
   }
 
-  const body = await request.json();
+  const raw = await request.json();
+  const args = extractVapiArgs(raw);
 
-  // Vapi sends: { date_range_start, date_range_end } or nested in message.toolCalls
-  const start = body.date_range_start ?? body.start;
-  const end = body.date_range_end ?? body.end;
-  const teamMemberId = body.team_member_id ?? undefined;
+  const start = (args.date_range_start ?? args.start) as string | undefined;
+  const end = (args.date_range_end ?? args.end) as string | undefined;
+  const teamMemberId = args.team_member_id as string | undefined;
 
   if (!start || !end) {
     return NextResponse.json(

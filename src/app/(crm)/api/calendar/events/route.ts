@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validateApiKey, rateLimit, rateLimitedResponse } from "@/lib/api-auth";
+import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
 
 export async function GET(request: NextRequest) {
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
     if (!rl.allowed) return rateLimitedResponse();
   }
 
-  const body = await request.json();
+  const raw = await request.json();
+  const body = extractVapiArgs(raw);
   const {
     team_member_id,
     type = "quote_visit",
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     project_description,
     created_by = "manual",
     vapi_call_id,
-  } = body;
+  } = body as Record<string, string | undefined>;
 
   const eventStart = start ?? datetime;
   const eventEnd = end ?? (datetime ? new Date(new Date(datetime).getTime() + 3600000).toISOString() : undefined);
