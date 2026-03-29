@@ -925,7 +925,7 @@ export default function JobWalkDetailPage() {
                     <input
                       type="text"
                       placeholder="Caption..."
-                      value={photo.caption}
+                      value={photo.caption ?? ""}
                       onChange={(e) =>
                         updatePhoto(photo.id, { caption: e.target.value })
                       }
@@ -1576,7 +1576,7 @@ export default function JobWalkDetailPage() {
         {viewingPhoto && (
           <img
             src={viewingPhoto.photo_url}
-            alt={viewingPhoto.caption}
+            alt={viewingPhoto.caption ?? "Job walk photo"}
             className="w-full rounded-lg"
           />
         )}

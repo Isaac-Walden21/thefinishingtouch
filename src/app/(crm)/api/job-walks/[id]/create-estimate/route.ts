@@ -37,7 +37,7 @@ export async function POST(
   // Derive estimate inputs from job walk data
   const totalSqft = (measurements.total_sqft as number) || 0;
   const linearFeet = (measurements.linear_feet as number) || 0;
-  const areas = (measurements.areas as Array<{ depth?: number }>) || [];
+  const areas = (measurements.areas as Array<{ length?: number; width?: number; depth?: number }>) || [];
   const avgDepth =
     areas.length > 0
       ? areas.reduce((sum, a) => sum + (a.depth || 4), 0) / areas.length

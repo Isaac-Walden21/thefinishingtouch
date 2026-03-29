@@ -1758,7 +1758,10 @@ export const demoJobWalks: JobWalk[] = [
     gps_lat: 40.4774,
     gps_lng: -85.8766,
     weather: { temp: 72, conditions: "Partly Cloudy", recent_rain: false },
+    voice_transcript: null,
+    created_by: "tm-1",
     created_at: "2026-03-25T14:30:00Z",
+    updated_at: "2026-03-25T14:30:00Z",
     completed_at: null,
   },
   {
@@ -1808,7 +1811,10 @@ export const demoJobWalks: JobWalk[] = [
     gps_lat: 40.4862,
     gps_lng: -86.1336,
     weather: { temp: 65, conditions: "Sunny", recent_rain: true },
+    voice_transcript: null,
+    created_by: "tm-1",
     created_at: "2026-03-20T10:00:00Z",
+    updated_at: "2026-03-20T10:45:00Z",
     completed_at: "2026-03-20T10:45:00Z",
   },
   {
@@ -1857,7 +1863,10 @@ export const demoJobWalks: JobWalk[] = [
     gps_lat: 40.0456,
     gps_lng: -86.0086,
     weather: { temp: 58, conditions: "Overcast", recent_rain: true },
+    voice_transcript: null,
+    created_by: "tm-2",
     created_at: "2026-03-15T09:00:00Z",
+    updated_at: "2026-03-15T09:50:00Z",
     completed_at: "2026-03-15T09:50:00Z",
   },
 ];
