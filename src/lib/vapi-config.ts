@@ -48,6 +48,17 @@ export const VAPI_SYSTEM_PROMPT = `You are Jake, the front office coordinator at
 - Confirm the appointment details before ending: "Alright so we've got you down for [day] at [time] at [address]. Someone will be out to take a look and get you a quote."
 `;
 
+/**
+ * Vapi Tool Definitions
+ *
+ * These are configured in the Vapi dashboard under the agent's tool settings.
+ * This file serves as the source of truth — copy these into Vapi when updating.
+ *
+ * Base URL: https://thefinishingtouch.vercel.app
+ */
+
+const CRM_BASE_URL = "https://thefinishingtouch.vercel.app";
+
 export const VAPI_TOOLS = [
   {
     type: "function",
@@ -70,8 +81,8 @@ export const VAPI_TOOLS = [
       },
     },
     server: {
-      url: "{CRM_BASE_URL}/api/calendar/availability",
-      method: "GET",
+      url: `${CRM_BASE_URL}/api/calendar/availability`,
+      method: "POST",
     },
   },
   {
@@ -93,7 +104,7 @@ export const VAPI_TOOLS = [
       },
     },
     server: {
-      url: "{CRM_BASE_URL}/api/calendar/events",
+      url: `${CRM_BASE_URL}/api/calendar/events`,
       method: "POST",
     },
   },
@@ -114,7 +125,7 @@ export const VAPI_TOOLS = [
       },
     },
     server: {
-      url: "{CRM_BASE_URL}/api/leads/from-call",
+      url: `${CRM_BASE_URL}/api/leads/from-call`,
       method: "POST",
     },
   },
