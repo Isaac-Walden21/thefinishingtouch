@@ -606,6 +606,104 @@ export interface Annotation {
   color: string;
 }
 
+// ── Module 7: Job Walks ──
+
+export type JobWalkStatus = "draft" | "completed" | "estimated";
+export type PhotoCategory = "overview" | "existing_condition" | "obstacle" | "measurement_reference" | "customer_request";
+export type SoilType = "clay" | "sandy" | "rocky" | "topsoil" | "unknown";
+export type DrainageType = "good" | "poor" | "standing_water" | "needs_french_drain";
+export type AccessType = "easy" | "moderate" | "difficult";
+export type ExistingSurface = "none" | "concrete" | "asphalt" | "gravel" | "grass";
+export type GradeType = "flat" | "slight" | "moderate" | "steep";
+export type CustomerTimeline = "asap" | "2_weeks" | "1_month" | "spring" | "summer" | "fall" | "flexible";
+export type BudgetRange = "under_3k" | "3_5k" | "5_10k" | "10_20k" | "20k_plus" | "not_discussed";
+export type LeadPriorityLevel = "hot" | "warm" | "cool";
+
+export interface MeasurementArea {
+  id: string;
+  name: string;
+  length: number;
+  width: number;
+  depth: number;
+  sqft: number;
+}
+
+export interface JobWalkMeasurements {
+  areas: MeasurementArea[];
+  linear_feet: number | null;
+  grade: GradeType;
+  elevation_change: number | null;
+  total_sqft: number;
+}
+
+export interface JobWalkSiteConditions {
+  soil_type: SoilType;
+  drainage: DrainageType;
+  access: AccessType;
+  existing_surface: ExistingSurface;
+  demolition_required: boolean;
+  demolition_area: number | null;
+  grading_required: boolean;
+  grading_yards: number | null;
+  obstacles: string[];
+  utility_lines: "located" | "not_located" | "need_811";
+  permit_needed: "yes" | "no" | "unsure";
+  notes: string;
+}
+
+export interface JobWalkPreferences {
+  description: string;
+  material: string;
+  color_finish: string;
+  timeline: CustomerTimeline;
+  budget_range: BudgetRange;
+  decision_maker: "yes" | "no_spouse" | "committee";
+  competitors: boolean;
+  competitor_count: number | null;
+  referral_potential: "hot" | "maybe" | "unlikely";
+  priority: LeadPriorityLevel;
+}
+
+export interface JobWalkPhoto {
+  id: string;
+  job_walk_id: string;
+  photo_url: string;
+  caption: string | null;
+  category: PhotoCategory;
+  annotations: Annotation[];
+  sort_order: number;
+  created_at: string;
+}
+
+export interface JobWalk {
+  id: string;
+  customer_id: string;
+  lead_id: string | null;
+  calendar_event_id: string | null;
+  status: JobWalkStatus;
+  measurements: JobWalkMeasurements;
+  site_conditions: JobWalkSiteConditions;
+  customer_preferences: JobWalkPreferences;
+  sketch_url: string | null;
+  voice_note_url: string | null;
+  voice_transcript: string | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  weather: { temp: number; conditions: string; recent_rain: boolean } | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  customer?: Customer;
+  photos?: JobWalkPhoto[];
+}
+
+export const JOB_WALK_STATUS_CONFIG: Record<JobWalkStatus, { label: string; color: string; bgColor: string }> = {
+  draft: { label: "Draft", color: "text-amber-600", bgColor: "bg-amber-50" },
+  completed: { label: "Completed", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  estimated: { label: "Estimated", color: "text-brand", bgColor: "bg-brand/10" },
+};
+
 // ── Email Builder Blocks ──
 
 export type EmailBlockType = "header" | "text" | "image" | "button" | "divider" | "footer";
