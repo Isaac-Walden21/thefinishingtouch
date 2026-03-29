@@ -62,7 +62,7 @@ export interface Lead {
 }
 
 // Calendar & Availability
-export type EventType = "quote_visit" | "blocked" | "personal";
+export type EventType = "quote_visit" | "pour_day" | "cleanup" | "delivery" | "personal" | "blocked";
 export type EventStatus = "scheduled" | "completed" | "cancelled" | "no_show";
 
 export interface AvailabilityRule {
@@ -379,17 +379,35 @@ export type AgentType =
   | "lead_followup"
   | "quote_followup"
   | "review_request"
-  | "website_chatbot";
+  | "website_chatbot"
+  | "job_completion"
+  | "appointment_reminder"
+  | "seasonal_reengagement";
 
 export type AgentStatus = "active" | "paused";
 
 export type ApprovalMode = "auto_send" | "requires_approval";
+
+export type AgentChannel = "email" | "sms" | "both";
+export type EscalationAction = "do_nothing" | "notify_evan" | "mark_cold";
 
 export interface AgentConfig {
   wait_hours: number;
   escalate_after_days: number;
   approval_mode: ApprovalMode;
   message_template: string;
+  follow_up_interval_days?: number;
+  max_follow_ups?: number;
+  escalation_action?: EscalationAction;
+  active_hours_start?: string;
+  active_hours_end?: string;
+  active_days?: number[];
+  channel?: AgentChannel;
+  templates?: {
+    first_contact?: string;
+    second_followup?: string;
+    final_followup?: string;
+  };
 }
 
 export interface AgentAction {
@@ -443,6 +461,24 @@ export const AGENT_TYPE_CONFIG: Record<
     color: "text-purple-400",
     bgColor: "bg-purple-500/20",
     icon: "MessageCircle",
+  },
+  job_completion: {
+    label: "Job Completion",
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/20",
+    icon: "CheckCircle2",
+  },
+  appointment_reminder: {
+    label: "Appointment Reminder",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+    icon: "Bell",
+  },
+  seasonal_reengagement: {
+    label: "Seasonal Re-engagement",
+    color: "text-rose-400",
+    bgColor: "bg-rose-500/20",
+    icon: "Sun",
   },
 };
 
@@ -544,212 +580,96 @@ export interface VisionProject {
   original_image_url: string;
   service_type: string;
   description: string;
-  starred: boolean;
   iterations: VisionIteration[];
   created_at: string;
   updated_at: string;
   customer?: Customer;
+  starred?: boolean;
+  annotations?: Annotation[];
 }
 
-// ── Estimate Templates ──
+// ── Annotations ──
 
-export interface EstimateTemplate {
+export type AnnotationType = "arrow" | "circle" | "rectangle" | "text";
+
+export interface Annotation {
   id: string;
-  name: string;
-  line_items: EstimateLineItem[];
-  materials: string[];
-  options: Record<string, unknown>;
-  margin: number;
-  terms: string | null;
-  created_by: string | null;
-  created_at: string;
+  type: AnnotationType;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  endX?: number;
+  endY?: number;
+  radius?: number;
+  text?: string;
+  color: string;
 }
 
-// ── Estimate Revisions ──
+// ── Email Builder Blocks ──
 
-export interface EstimateRevision {
+export type EmailBlockType = "header" | "text" | "image" | "button" | "divider" | "footer";
+
+export interface EmailBlock {
   id: string;
-  estimate_id: string;
-  revision_number: number;
-  snapshot: Record<string, unknown>;
-  created_by: string | null;
-  created_at: string;
-}
-
-// ── Estimate Approvals ──
-
-export type ApprovalStatus = "pending" | "accepted" | "changes_requested";
-
-export interface EstimateApproval {
-  id: string;
-  estimate_id: string;
-  token: string;
-  status: ApprovalStatus;
-  customer_response: string | null;
-  created_at: string;
-  expires_at: string;
-}
-
-// ── Invoice Views ──
-
-export interface InvoiceView {
-  id: string;
-  invoice_id: string;
-  viewed_at: string;
-  source: string;
-}
-
-// ── Invoice Splits ──
-
-export interface InvoiceSplit {
-  id: string;
-  parent_invoice_id: string;
-  deposit_invoice_id: string;
-  final_invoice_id: string;
-  split_percentage: number;
-  created_at: string;
-}
-
-// ── Vision Shares ──
-
-export interface VisionShare {
-  id: string;
-  project_id: string;
-  token: string;
-  expires_at: string;
-  created_at: string;
-}
-
-// ── Vision Annotations ──
-
-export interface VisionAnnotation {
-  id: string;
-  iteration_id: string;
-  annotations: Record<string, unknown>[];
-  created_at: string;
+  type: EmailBlockType;
+  content: Record<string, string>;
 }
 
 // ── Referrals ──
 
-export type ReferralStatus = "pending" | "contacted" | "converted" | "expired";
-
 export interface Referral {
   id: string;
-  referrer_customer_id: string;
-  referred_contact_id: string | null;
+  referrer_id: string;
+  referrer_name: string;
+  referred_name: string;
+  referred_email: string;
+  referred_phone: string | null;
   code: string;
-  status: ReferralStatus;
+  status: "pending" | "contacted" | "booked" | "completed";
   created_at: string;
 }
 
-// ── Campaign Recipients ──
+// ── Settings ──
 
-export type RecipientStatus = "queued" | "sent" | "delivered" | "bounced";
-
-export interface CampaignRecipient {
-  id: string;
-  campaign_id: string;
-  contact_id: string;
-  status: RecipientStatus;
-  opened_at: string | null;
-  clicked_at: string | null;
-  unsubscribed_at: string | null;
+export interface CompanySettings {
+  company_name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  website: string;
+  logo_url: string | null;
+  google_review_url: string;
+  service_area: string;
 }
 
-// ── Automation Enrollments ──
-
-export type EnrollmentStatus = "active" | "completed" | "paused" | "unsubscribed";
-
-export interface AutomationEnrollment {
+export interface IntegrationConfig {
   id: string;
-  automation_id: string;
-  contact_id: string;
-  current_step: number;
-  status: EnrollmentStatus;
-  enrolled_at: string;
-  next_email_at: string | null;
-}
-
-// ── Company Settings ──
-
-export interface CompanySetting {
-  id: string;
-  key: string;
-  value: Record<string, unknown>;
-  updated_at: string;
-}
-
-// ── Notification Preferences ──
-
-export type NotificationChannel = "email" | "sms" | "push" | "in_app";
-
-export interface NotificationPreference {
-  id: string;
-  user_id: string;
-  event: string;
-  channel: NotificationChannel;
-  enabled: boolean;
-}
-
-// ── Integrations ──
-
-export type IntegrationStatus = "connected" | "disconnected" | "error";
-
-export interface Integration {
-  id: string;
-  provider: string;
-  config: Record<string, unknown>;
-  status: IntegrationStatus;
+  provider: "stripe" | "google_calendar" | "twilio" | "google_places" | "gmail" | "quickbooks";
+  label: string;
+  description: string;
+  status: "connected" | "not_connected" | "error";
   last_activity: string | null;
-  created_at: string;
 }
-
-// ── Audit Log ──
 
 export interface AuditLogEntry {
   id: string;
-  user_id: string | null;
+  user_name: string;
   action: string;
   category: string;
-  entity_type: string | null;
-  entity_id: string | null;
-  old_value: Record<string, unknown> | null;
-  new_value: Record<string, unknown> | null;
+  old_value: string | null;
+  new_value: string | null;
   created_at: string;
 }
 
-// ── Agent Templates ──
-
-export type AgentTemplateType = "email" | "sms";
-
-export interface AgentTemplate {
-  id: string;
-  agent_id: string;
-  template_type: AgentTemplateType;
-  subject: string | null;
-  body: string;
-  created_at: string;
-}
-
-// ── Customer Tags ──
-
-export interface CustomerTag {
-  id: string;
-  customer_id: string;
-  tag: string;
-  created_at: string;
-}
-
-// ── Lead Priority ──
-
-export type LeadPriority = "low" | "normal" | "high" | "urgent";
-
-export const LEAD_PRIORITY_CONFIG: Record<
-  LeadPriority,
-  { label: string; color: string; bgColor: string }
-> = {
-  low: { label: "Low", color: "text-slate-400", bgColor: "bg-slate-500/20" },
-  normal: { label: "Normal", color: "text-blue-400", bgColor: "bg-blue-500/20" },
-  high: { label: "High", color: "text-orange-400", bgColor: "bg-orange-500/20" },
-  urgent: { label: "Urgent", color: "text-red-400", bgColor: "bg-red-500/20" },
+export const EVENT_TYPE_CONFIG: Record<EventType, { label: string; color: string; bgColor: string }> = {
+  quote_visit: { label: "Quote Visit", color: "text-[#0085FF]", bgColor: "bg-[#0085FF]/10" },
+  pour_day: { label: "Pour Day", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  cleanup: { label: "Cleanup", color: "text-amber-600", bgColor: "bg-amber-50" },
+  delivery: { label: "Delivery", color: "text-purple-600", bgColor: "bg-purple-50" },
+  personal: { label: "Personal", color: "text-slate-500", bgColor: "bg-slate-100" },
+  blocked: { label: "Blocked", color: "text-slate-400", bgColor: "bg-slate-200" },
 };
