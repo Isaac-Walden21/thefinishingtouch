@@ -98,12 +98,6 @@ export default function LeadsPage() {
     [team]
   );
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-[var(--muted)]">Loading...</div>
-    </div>
-  );
-
   const hasFilters = search || assigneeFilter.length > 0 || projectTypeFilter || sourceFilter || dateRange;
 
   const filteredLeads = useMemo(() => {
@@ -212,6 +206,12 @@ export default function LeadsPage() {
   // Drag & drop state
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<LeadStatus | null>(null);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-[var(--muted)]">Loading...</div>
+    </div>
+  );
 
   return (
     <div className="p-4 pt-16 lg:p-8 lg:pt-8">
