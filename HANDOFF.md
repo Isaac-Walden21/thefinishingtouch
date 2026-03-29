@@ -1,8 +1,48 @@
 # The Finishing Touch CRM — Handoff
 
-## Last Session: March 28, 2026
+## Last Session: March 28, 2026 (Session 2)
 
-## What Was Done
+## What Was Done (Session 2 — Supabase Wiring)
+
+### A-Team Parallel Deployment (3 agents)
+
+**Backend Dev** wired all API routes to Supabase:
+- Fixed 4 routes still using demo data (invoices list/create, invoice send, invoice PDF, payment page)
+- Created 11 new list endpoints: customers, leads, agents, activities, payments, team-members, invoices/[id], and all 4 marketing endpoints (contacts, templates, campaigns, automations)
+- All list endpoints return `data ?? []`, ordered by `created_at` descending
+- Mutation endpoints include audit logging via `logAudit()` and `logActivity()`
+- Customer joins via `select('*, customer:customers(id,name,email,phone)')` pattern
+- 15 files changed, 524 lines added
+
+**Frontend Dev** wired all 26 CRM pages from demo data to API fetch calls:
+- Replaced all `import { ... } from "@/lib/demo-data"` with `useEffect` + `fetch('/api/...')` calls
+- Added loading states (centered "Loading..." indicator) to every page
+- Wired form submissions and mutations to POST/PATCH API routes
+- 26 files changed, 718 lines added, 254 removed
+
+**QA** validated baseline and produced pre-wiring audit report:
+- TypeScript: PASS (0 errors)
+- Build: PASS (all routes compile)
+- Documented 26 page files and 4 API routes needing wiring (all now complete)
+- Documented 10 missing list endpoints (all now created)
+
+**Post-merge fixes:**
+- Resolved duplicate type imports in job-walk/[id]/page.tsx
+- Fixed JobWalkStatus typing for status config lookup
+- Final build: PASS with zero errors
+
+### Result
+- Zero `@/lib/demo-data` imports remain in any page or API route file
+- All 89 API routes query live Supabase database
+- All 26+ CRM pages fetch data from API routes
+- `demo-data.ts` preserved as reference/seed data (not imported anywhere)
+- `npx tsc --noEmit` and `npx next build` both pass clean
+
+---
+
+## Previous Sessions
+
+## What Was Done (Session 1 — Full Build)
 
 ### 1. Full Codebase Audit & Fix (16 issues)
 - Extracted shared UI components (Button, Input, Select, Textarea, SearchInput, PageHeader, MarketingNav, Skeleton)
@@ -57,9 +97,9 @@ Wrote comprehensive specs for every page in `docs/specs/01-15.md`:
 - `OPENWEATHERMAP_API_KEY` — weather widget + job walk weather capture
 - Create `job-walk-photos` Supabase Storage bucket
 
-### Wiring Up
-- Connect frontend pages to real Supabase queries (currently using demo data as fallback)
-- Run migration 004 and 005 against production Supabase
+### Wiring Up (DONE)
+- ~~Connect frontend pages to real Supabase queries~~ COMPLETED
+- Run migration 004 and 005 against production Supabase (if not already done)
 - Set up Stripe webhook endpoint in Stripe dashboard
 - Configure Gmail API or Resend for outbound email from `evan@thefinishingtouchllc.com`
 - Set up Twilio phone number for SMS
