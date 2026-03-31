@@ -32,6 +32,8 @@ import {
   Grid3X3,
   Undo2,
   Eraser,
+  Loader2,
+  Receipt,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Toggle } from "@/components/ui/Toggle";
@@ -575,6 +577,17 @@ export default function JobWalkDetailPage() {
           // Fetch customer
           const customers = await fetch('/api/customers').then(r => r.json());
           setCustomer(customers.find((c: Customer) => c.id === data.customer_id) ?? null);
+
+          // If already completed/estimated, fetch linked estimate
+          if (data.status === "completed" || data.status === "estimated") {
+            try {
+              const estRes = await fetch('/api/estimates');
+              const estimates = await estRes.json();
+              const linked = (estimates as { id: string; job_walk_id?: string; project_type?: string; total?: number; line_items?: unknown[]; timeline?: string }[])
+                .find((e) => e.job_walk_id === id);
+              if (linked) setGeneratedEstimate(linked);
+            } catch { /* non-critical */ }
+          }
         }
       })
       .catch(console.error)
@@ -677,6 +690,18 @@ export default function JobWalkDetailPage() {
 
   // Completed state
   const [isCompleted, setIsCompleted] = useState(status !== "draft");
+  const [completing, setCompleting] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+
+  // Generated estimate from completion
+  const [generatedEstimate, setGeneratedEstimate] = useState<{
+    id: string;
+    project_type?: string;
+    total?: number;
+    line_items?: unknown[];
+    timeline?: string;
+  } | null>(null);
+  const [convertingToInvoice, setConvertingToInvoice] = useState(false);
 
   // ── Computed ──
 
@@ -801,9 +826,54 @@ export default function JobWalkDetailPage() {
     setIsPlaying(false);
   }
 
-  function handleComplete() {
-    setStatus("completed");
-    setIsCompleted(true);
+  async function handleComplete() {
+    setCompleting(true);
+    setCompletionError(null);
+
+    try {
+      // 1. Mark walk as completed in DB
+      const completeRes = await fetch(`/api/job-walks/${id}/complete`, { method: "POST" });
+      if (!completeRes.ok) {
+        const err = await completeRes.json();
+        throw new Error(err.error || "Failed to complete job walk");
+      }
+
+      setStatus("completed");
+      setIsCompleted(true);
+
+      // 2. Auto-generate estimate from walk data
+      try {
+        const estimateRes = await fetch(`/api/job-walks/${id}/create-estimate`, { method: "POST" });
+        if (estimateRes.ok) {
+          const data = await estimateRes.json();
+          setGeneratedEstimate(data.estimate ?? null);
+          setStatus("estimated");
+        }
+      } catch {
+        // Estimate generation failed — non-blocking, fallback link shown
+      }
+    } catch (err) {
+      setCompletionError(err instanceof Error ? err.message : "Failed to complete");
+    } finally {
+      setCompleting(false);
+    }
+  }
+
+  async function handleConvertToInvoice() {
+    if (!generatedEstimate?.id) return;
+    setConvertingToInvoice(true);
+
+    try {
+      const res = await fetch(`/api/estimates/${generatedEstimate.id}/convert`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create invoice");
+      }
+      const invoice = await res.json();
+      router.push(`/invoices/${invoice.id}`);
+    } catch {
+      setConvertingToInvoice(false);
+    }
   }
 
   function formatSeconds(s: number): string {
@@ -1531,26 +1601,103 @@ export default function JobWalkDetailPage() {
 
           {/* Complete button */}
           {status === "draft" && (
-            <button
-              type="button"
-              onClick={handleComplete}
-              className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition-colors hover:bg-emerald-700 min-h-[56px]"
-            >
-              <Check className="h-5 w-5" />
-              Complete Job Walk
-            </button>
+            <>
+              {completionError && (
+                <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {completionError}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={completing}
+                className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60 min-h-[56px]"
+              >
+                {completing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-5 w-5" />
+                    Complete Job Walk
+                  </>
+                )}
+              </button>
+            </>
           )}
 
           {/* Post-completion actions */}
           {isCompleted && (
-            <div className="space-y-2">
-              <Link
-                href={`/estimates/new?jobwalk=${id}`}
-                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-slate-50 min-h-[44px]"
-              >
-                <FileText className="h-5 w-5 text-brand" />
-                Create Estimate
-              </Link>
+            <div className="space-y-3">
+              {/* Estimate card */}
+              {generatedEstimate ? (
+                <div className="rounded-lg border border-brand/20 bg-brand/5 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-brand" />
+                    <span className="text-sm font-semibold text-foreground">Estimate Generated</span>
+                  </div>
+                  <div className="mb-3 grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-foreground">
+                        ${(generatedEstimate.total ?? 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-slate-500">Total</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-foreground">
+                        {(generatedEstimate.line_items as unknown[] | undefined)?.length ?? 0}
+                      </p>
+                      <p className="text-xs text-slate-500">Line Items</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {generatedEstimate.timeline ?? "—"}
+                      </p>
+                      <p className="text-xs text-slate-500">Timeline</p>
+                    </div>
+                  </div>
+                  {generatedEstimate.project_type && (
+                    <p className="mb-3 text-xs text-slate-500">
+                      {generatedEstimate.project_type}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/estimates/${generatedEstimate.id}`}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-foreground hover:bg-slate-50 min-h-[44px]"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Estimate
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleConvertToInvoice}
+                      disabled={convertingToInvoice}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-60 min-h-[44px]"
+                    >
+                      {convertingToInvoice ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Receipt className="h-4 w-4" />
+                      )}
+                      Convert to Invoice
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Fallback: manual create estimate link if auto-generation failed */
+                <Link
+                  href={`/estimates/new?jobwalk=${id}`}
+                  className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-slate-50 min-h-[44px]"
+                >
+                  <FileText className="h-5 w-5 text-brand" />
+                  Create Estimate
+                </Link>
+              )}
+
+              {/* Secondary actions */}
               <Link
                 href={`/vision?photo=${photos[0]?.photo_url ?? ""}`}
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-slate-50 min-h-[44px]"
