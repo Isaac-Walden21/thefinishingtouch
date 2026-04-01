@@ -2,15 +2,23 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const publicPaths = ["/pay", "/api/webhooks", "/api/vapi", "/api/chatbot", "/api/marketing/track", "/api/marketing/unsubscribe"];
+const publicPaths = [
+  "/login",
+  "/signup",
+  "/invite",
+  "/pay",
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/api/auth/accept-invite",
+  "/api/webhooks",
+  "/api/vapi",
+  "/api/chatbot",
+  "/api/marketing/track",
+  "/api/marketing/unsubscribe",
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Allow public paths
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
 
   // Allow static assets and Next.js internals
   if (
@@ -23,51 +31,79 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for Supabase auth session
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    // No Supabase configured — allow access (demo mode)
+  // Allow public paths
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        cookie: request.headers.get("cookie") ?? "",
-      },
-    },
-  });
-
+  // Check for auth token
   const accessToken = request.cookies.get("sb-access-token")?.value;
   const refreshToken = request.cookies.get("sb-refresh-token")?.value;
 
   if (!accessToken && !refreshToken) {
-    // No tokens — in demo mode, allow access; in production, redirect to login
-    // TODO: Add a /login page and redirect here when auth is fully wired up
-    return NextResponse.next();
+    // No tokens — redirect to login (unless it's an API route)
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (accessToken) {
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
-    if (user) {
-      return NextResponse.next();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+      if (user) {
+        return NextResponse.next();
+      }
     }
   }
 
-  // Token invalid or expired — allow for now (demo mode)
-  return NextResponse.next();
+  // Token invalid or expired — try refresh
+  if (refreshToken) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+
+      if (!error && data.session) {
+        const response = NextResponse.next();
+
+        response.cookies.set("sb-access-token", data.session.access_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60,
+        });
+
+        response.cookies.set("sb-refresh-token", data.session.refresh_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        });
+
+        return response;
+      }
+    }
+  }
+
+  // All auth attempts failed
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.redirect(new URL("/login", request.url));
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
