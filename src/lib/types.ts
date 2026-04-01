@@ -1,3 +1,44 @@
+// ── Auth & Multi-Tenancy ──
+
+export type UserRole = "owner" | "admin" | "manager" | "crew" | "sales_rep";
+
+export interface AppUser {
+  id: string;
+  company_id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  is_super_admin: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Invite {
+  id: string;
+  company_id: string;
+  email: string;
+  role: UserRole;
+  token: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+}
+
 export type LeadStatus =
   | "new"
   | "contacted"
