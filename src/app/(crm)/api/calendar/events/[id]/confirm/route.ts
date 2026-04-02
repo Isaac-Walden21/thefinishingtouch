@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendConfirmation } from "@/lib/twilio";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/calendar/events/[id]/confirm — send SMS confirmation
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data: event } = await supabase
-    .from("calendar_events")
-    .select("*")
+  const { data: event } = await supabaseAdmin
+    .from("calendar_events").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -50,6 +53,7 @@ export async function POST(
     }
 
     await logActivity({
+      company_id: session.companyId,
       lead_id: event.lead_id,
       type: "note",
       description: `SMS confirmation sent to ${event.customer_name} at ${event.customer_phone}`,
@@ -68,5 +72,10 @@ export async function POST(
       },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/customers/export — CSV export with optional filters
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const tag = searchParams.get("tag");
   const source = searchParams.get("source");
   const serviceType = searchParams.get("service_type");
 
-  let query = supabase
-    .from("customers")
-    .select("*")
+  let query = supabaseAdmin
+    .from("customers").select("*").eq("company_id", session.companyId)
     .is("archived_at", null)
     .order("name");
 
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   // Filter by tag if specified (requires a join or subquery)
   if (tag) {
-    const { data: taggedIds } = await supabase
+    const { data: taggedIds } = await supabaseAdmin
       .from("customer_tags")
       .select("customer_id")
       .eq("tag", tag);
@@ -59,6 +62,11 @@ export async function GET(request: NextRequest) {
       "Content-Disposition": `attachment; filename="customers-${new Date().toISOString().split("T")[0]}.csv"`,
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 function escapeCsv(value: string): string {

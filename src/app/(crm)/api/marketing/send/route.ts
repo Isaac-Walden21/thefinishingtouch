@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const body = await request.json();
   const { campaign_id, test_email } = body;
 
@@ -21,4 +26,9 @@ export async function POST(request: Request) {
       ? `Test email sent to ${test_email}`
       : "Campaign queued for sending",
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

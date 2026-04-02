@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/vision/share/[token] — public share page data
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { token } = await params;
 
-  const { data: share } = await supabase
+  const { data: share } = await supabaseAdmin
     .from("vision_shares")
     .select("*")
     .eq("token", token)
@@ -22,9 +26,8 @@ export async function GET(
     return NextResponse.json({ error: "This share link has expired" }, { status: 410 });
   }
 
-  const { data: project } = await supabase
-    .from("vision_projects")
-    .select("*")
+  const { data: project } = await supabaseAdmin
+    .from("vision_projects").select("*").eq("company_id", session.companyId)
     .eq("id", share.project_id)
     .single();
 
@@ -32,7 +35,7 @@ export async function GET(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const { data: iterations } = await supabase
+  const { data: iterations } = await supabaseAdmin
     .from("vision_iterations")
     .select("*")
     .eq("project_id", project.id)
@@ -48,4 +51,9 @@ export async function GET(
     },
     iterations: iterations ?? [],
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

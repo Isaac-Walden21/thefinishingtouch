@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/marketing/referral/leaderboard — referral stats
 export async function GET() {
-  const { data: referrals, error } = await supabase
-    .from("referrals")
-    .select("referrer_customer_id, status, customer:customers(name)")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
+  const { data: referrals, error } = await supabaseAdmin
+    .from("referrals").select("referrer_customer_id, status, customer:customers(name)").eq("company_id", session.companyId)
     .order("created_at");
 
   if (error) {
@@ -46,4 +50,9 @@ export async function GET() {
     total_referrals: referrals?.length ?? 0,
     total_converted: referrals?.filter((r) => r.status === "converted").length ?? 0,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

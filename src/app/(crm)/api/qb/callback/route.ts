@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/qb/callback — QuickBooks OAuth callback
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const realmId = searchParams.get("realmId");
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
     const tokens = await tokenRes.json();
 
     // Store connection in integrations table
-    await supabase.from("integrations").upsert(
+    await supabaseAdmin.from("integrations").upsert(
       {
         provider: "quickbooks",
         config: {
@@ -70,6 +74,7 @@ export async function GET(request: NextRequest) {
     );
 
     await logAudit({
+      company_id: session.companyId,
       action: "quickbooks_connected",
       category: "integrations",
       new_value: { realm_id: realmId },
@@ -87,5 +92,10 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

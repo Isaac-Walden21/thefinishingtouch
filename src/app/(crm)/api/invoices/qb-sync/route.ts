@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { refreshToken, syncAllUnsynced } from "@/lib/quickbooks";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/qb-sync — push unsynced invoices to QuickBooks
 export async function POST() {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   try {
     // Get a fresh access token
     const tokens = await refreshToken();
 
     // Get all paid/sent invoices that haven't been synced
     // We track sync via the integrations table
-    const { data: invoices, error } = await supabase
-      .from("invoices")
-      .select("*, customer:customers(name, email)")
+    const { data: invoices, error } = await supabaseAdmin
+      .from("invoices").select("*, customer:customers(name, email)").eq("company_id", session.companyId)
       .in("status", ["sent", "paid", "partial"])
       .order("created_at");
 
@@ -43,6 +47,7 @@ export async function POST() {
     const result = await syncAllUnsynced(tokens.access_token, mapped);
 
     await logAudit({
+      company_id: session.companyId,
       action: "qb_sync",
       category: "integrations",
       new_value: {
@@ -52,7 +57,7 @@ export async function POST() {
     });
 
     // Update integration last_activity
-    await supabase
+    await supabaseAdmin
       .from("integrations")
       .upsert(
         {
@@ -69,5 +74,10 @@ export async function POST() {
       { error: error instanceof Error ? error.message : "QuickBooks sync failed" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

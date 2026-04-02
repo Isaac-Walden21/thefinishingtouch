@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { getAvailableSlots } from "@/lib/availability";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/calendar/availability?start=YYYY-MM-DD&end=YYYY-MM-DD
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const isApiKey = validateApiKey(request);
   if (isApiKey) {
     const rl = rateLimit("availability", 60);
@@ -30,11 +34,19 @@ export async function GET(request: NextRequest) {
     console.error("Availability GET error:", msg, error);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/calendar/availability — Vapi tool call format
 // Vapi sends function parameters as a POST body
 export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const isApiKey = validateApiKey(request);
   if (isApiKey) {
     const rl = rateLimit("availability", 60);
@@ -68,5 +80,10 @@ export async function POST(request: NextRequest) {
     const msg = error instanceof Error ? error.message : "Failed to compute availability";
     console.error("Availability POST error:", msg, error);
     return NextResponse.json({ error: msg }, { status: 500 });
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

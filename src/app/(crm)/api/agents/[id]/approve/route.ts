@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/agents/[id]/approve — approve a pending agent action
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { id } = await params;
   const body = await request.json();
   const { action_id } = body as { action_id: string };
@@ -18,7 +23,7 @@ export async function POST(
     );
   }
 
-  const { data: action } = await supabase
+  const { data: action } = await supabaseAdmin
     .from("agent_actions")
     .select("*")
     .eq("id", action_id)
@@ -33,7 +38,7 @@ export async function POST(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("agent_actions")
     .update({ status: "completed" })
     .eq("id", action_id);
@@ -43,6 +48,7 @@ export async function POST(
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: action.customer_id,
     lead_id: action.lead_id,
     type: "ai_action",
@@ -50,4 +56,9 @@ export async function POST(
   });
 
   return NextResponse.json({ success: true, action_id });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

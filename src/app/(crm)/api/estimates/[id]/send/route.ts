@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendEmail } from "@/lib/send-email";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/estimates/[id]/send — email estimate PDF to customer
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data: estimate } = await supabase
-    .from("estimates")
-    .select("*, customer:customers(id, name, email)")
+  const { data: estimate } = await supabaseAdmin
+    .from("estimates").select("*, customer:customers(id, name, email)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -34,7 +37,7 @@ export async function POST(
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-  await supabase.from("estimate_approvals").insert({
+  await supabaseAdmin.from("estimate_approvals").insert({
     estimate_id: id,
     token,
     status: "pending",
@@ -73,12 +76,13 @@ export async function POST(
   }
 
   // Update estimate status to sent
-  await supabase
+  await supabaseAdmin
     .from("estimates")
     .update({ status: "sent" })
     .eq("id", id);
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: estimate.customer_id,
     type: "email",
     description: `Estimate sent for ${estimate.project_type} — $${estimate.total}`,
@@ -89,4 +93,9 @@ export async function POST(
     message: `Estimate sent to ${customerEmail}`,
     approval_token: token,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

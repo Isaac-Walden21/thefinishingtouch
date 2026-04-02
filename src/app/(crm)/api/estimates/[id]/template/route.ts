@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/estimates/[id]/template — save estimate as a reusable template
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
   const { name, created_by } = body as { name?: string; created_by?: string };
 
-  const { data: estimate } = await supabase
-    .from("estimates")
-    .select("*")
+  const { data: estimate } = await supabaseAdmin
+    .from("estimates").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -22,7 +25,7 @@ export async function POST(
 
   const templateName = name ?? `${estimate.project_type} Template`;
 
-  const { data: template, error } = await supabase
+  const { data: template, error } = await supabaseAdmin
     .from("estimate_templates")
     .insert({
       name: templateName,
@@ -41,4 +44,9 @@ export async function POST(
   }
 
   return NextResponse.json(template, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

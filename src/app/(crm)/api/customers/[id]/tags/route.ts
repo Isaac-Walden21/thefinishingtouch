@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/customers/[id]/tags — add or remove tags
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
   const { action, tag } = body as { action: "add" | "remove"; tag: string };
@@ -18,7 +22,7 @@ export async function POST(
   }
 
   if (action === "add") {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("customer_tags")
       .upsert({ customer_id: id, tag }, { onConflict: "customer_id,tag" });
 
@@ -26,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   } else if (action === "remove") {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("customer_tags")
       .delete()
       .eq("customer_id", id)
@@ -40,7 +44,7 @@ export async function POST(
   }
 
   // Return updated tags
-  const { data: tags } = await supabase
+  const { data: tags } = await supabaseAdmin
     .from("customer_tags")
     .select("tag")
     .eq("customer_id", id);
@@ -49,4 +53,9 @@ export async function POST(
     success: true,
     tags: (tags ?? []).map((t) => t.tag),
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

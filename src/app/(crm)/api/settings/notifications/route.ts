@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/settings/notifications — get notification preferences
 export async function GET(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("user_id");
 
@@ -13,7 +18,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("notification_preferences")
     .select("*")
     .eq("user_id", userId);
@@ -23,10 +28,19 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PUT /api/settings/notifications — update notification preferences
 export async function PUT(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const body = await request.json();
   const { user_id, preferences } = body as {
     user_id: string;
@@ -45,7 +59,7 @@ export async function PUT(request: Request) {
   }
 
   for (const pref of preferences) {
-    await supabase
+    await supabaseAdmin
       .from("notification_preferences")
       .upsert(
         {
@@ -59,4 +73,9 @@ export async function PUT(request: Request) {
   }
 
   return NextResponse.json({ success: true, updated: preferences.length });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

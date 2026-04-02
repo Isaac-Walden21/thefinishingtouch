@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/marketing/templates — list email templates
 export async function GET() {
-  const { data, error } = await supabase
-    .from("email_templates")
-    .select("*")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
+  const { data, error } = await supabaseAdmin
+    .from("email_templates").select("*").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -13,4 +17,9 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? []);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

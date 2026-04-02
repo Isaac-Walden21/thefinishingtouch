@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/marketing/referral/create — create a referral code for a customer
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const body = await request.json();
   const { customer_id } = body as { customer_id: string };
 
@@ -13,9 +18,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id, name")
+  const { data: customer } = await supabaseAdmin
+    .from("customers").select("id, name").eq("company_id", session.companyId)
     .eq("id", customer_id)
     .single();
 
@@ -24,9 +28,8 @@ export async function POST(request: Request) {
   }
 
   // Check if customer already has a referral code
-  const { data: existing } = await supabase
-    .from("referrals")
-    .select("code")
+  const { data: existing } = await supabaseAdmin
+    .from("referrals").select("code").eq("company_id", session.companyId)
     .eq("referrer_customer_id", customer_id)
     .limit(1)
     .single();
@@ -47,7 +50,8 @@ export async function POST(request: Request) {
     .slice(0, 8);
   const code = `${nameSlug}-${Math.random().toString(36).slice(2, 6)}`;
 
-  const { error } = await supabase.from("referrals").insert({
+  const { error } = await supabaseAdmin.from("referrals").insert({
+      company_id: session.companyId,
     referrer_customer_id: customer_id,
     code,
     status: "pending",
@@ -64,4 +68,9 @@ export async function POST(request: Request) {
     url: `${appUrl}/api/referral/${code}`,
     customer_name: customer.name,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

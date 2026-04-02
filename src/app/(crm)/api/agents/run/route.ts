@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 export async function POST() {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   // In production this would be called by a cron job.
   // It checks each active agent and executes pending actions:
   // 1. Lead Follow-Up: find leads with status "new" and no contact in 24h
@@ -17,4 +22,9 @@ export async function POST() {
       review_request: { checked: 1, actions_taken: 0 },
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

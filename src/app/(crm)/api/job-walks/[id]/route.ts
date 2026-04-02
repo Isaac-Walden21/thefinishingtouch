@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/job-walks/[id] — get single job walk with photos
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data, error } = await supabase
-    .from("job_walks")
-    .select("*, customer:customers(id, name, email, phone, address, city, state, zip)")
+  const { data, error } = await supabaseAdmin
+    .from("job_walks").select("*, customer:customers(id, name, email, phone, address, city, state, zip)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -23,13 +26,17 @@ export async function GET(
   }
 
   // Fetch photos separately ordered by sort_order
-  const { data: photos } = await supabase
-    .from("job_walk_photos")
-    .select("*")
+  const { data: photos } = await supabaseAdmin
+    .from("job_walk_photos").select("*").eq("company_id", session.companyId)
     .eq("job_walk_id", id)
     .order("sort_order", { ascending: true });
 
   return NextResponse.json({ ...data, photos: photos ?? [] });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PATCH /api/job-walks/[id] — update job walk
@@ -37,6 +44,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
 
@@ -69,9 +79,8 @@ export async function PATCH(
   }
 
   // Fetch current for audit trail
-  const { data: current } = await supabase
-    .from("job_walks")
-    .select("*")
+  const { data: current } = await supabaseAdmin
+    .from("job_walks").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -87,7 +96,7 @@ export async function PATCH(
     updates.completed_at = new Date().toISOString();
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("job_walks")
     .update(updates)
     .eq("id", id)
@@ -99,6 +108,7 @@ export async function PATCH(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "job_walk_updated",
     category: "job_walks",
     entity_type: "job_walk",
@@ -108,6 +118,11 @@ export async function PATCH(
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // DELETE /api/job-walks/[id] — delete draft job walk only
@@ -115,12 +130,14 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
   // Check status before deleting
-  const { data: current } = await supabase
-    .from("job_walks")
-    .select("id, status")
+  const { data: current } = await supabaseAdmin
+    .from("job_walks").select("id, status").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -139,9 +156,8 @@ export async function DELETE(
   }
 
   // Photos cascade-delete via FK, but we need to clean up storage files
-  const { data: photos } = await supabase
-    .from("job_walk_photos")
-    .select("photo_url")
+  const { data: photos } = await supabaseAdmin
+    .from("job_walk_photos").select("photo_url").eq("company_id", session.companyId)
     .eq("job_walk_id", id);
 
   // Clean up storage files
@@ -150,14 +166,13 @@ export async function DELETE(
       .map((p) => extractStoragePath(p.photo_url))
       .filter(Boolean) as string[];
     if (paths.length > 0) {
-      await supabase.storage.from("job-walk-photos").remove(paths);
+      await supabaseAdmin.storage.from("job-walk-photos").remove(paths);
     }
   }
 
   // Also clean up sketch and voice note if present
-  const { data: walk } = await supabase
-    .from("job_walks")
-    .select("sketch_url, voice_note_url")
+  const { data: walk } = await supabaseAdmin
+    .from("job_walks").select("sketch_url, voice_note_url").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -172,11 +187,11 @@ export async function DELETE(
       if (p) cleanupPaths.push(p);
     }
     if (cleanupPaths.length > 0) {
-      await supabase.storage.from("job-walk-photos").remove(cleanupPaths);
+      await supabaseAdmin.storage.from("job-walk-photos").remove(cleanupPaths);
     }
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("job_walks")
     .delete()
     .eq("id", id);
@@ -186,6 +201,11 @@ export async function DELETE(
   }
 
   return NextResponse.json({ success: true, id });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 /** Extract the storage path from a full public URL */

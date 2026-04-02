@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit, logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/customers/merge — merge two customer records
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+
   const body = await request.json();
   const { primary_id, secondary_id } = body as {
     primary_id: string;
@@ -25,15 +29,13 @@ export async function POST(request: Request) {
   }
 
   // Fetch both customers
-  const { data: primary } = await supabase
-    .from("customers")
-    .select("*")
+  const { data: primary } = await supabaseAdmin
+    .from("customers").select("*").eq("company_id", session.companyId)
     .eq("id", primary_id)
     .single();
 
-  const { data: secondary } = await supabase
-    .from("customers")
-    .select("*")
+  const { data: secondary } = await supabaseAdmin
+    .from("customers").select("*").eq("company_id", session.companyId)
     .eq("id", secondary_id)
     .single();
 
@@ -45,38 +47,38 @@ export async function POST(request: Request) {
   }
 
   // Reassign leads from secondary to primary
-  await supabase
+  await supabaseAdmin
     .from("leads")
     .update({ customer_id: primary_id })
     .eq("customer_id", secondary_id);
 
   // Reassign activities
-  await supabase
+  await supabaseAdmin
     .from("activities")
     .update({ customer_id: primary_id })
     .eq("customer_id", secondary_id);
 
   // Reassign invoices
-  await supabase
+  await supabaseAdmin
     .from("invoices")
     .update({ customer_id: primary_id })
     .eq("customer_id", secondary_id);
 
   // Reassign marketing contacts
-  await supabase
+  await supabaseAdmin
     .from("marketing_contacts")
     .update({ customer_id: primary_id })
     .eq("customer_id", secondary_id);
 
   // Merge tags
-  const { data: secondaryTags } = await supabase
+  const { data: secondaryTags } = await supabaseAdmin
     .from("customer_tags")
     .select("tag")
     .eq("customer_id", secondary_id);
 
   if (secondaryTags?.length) {
     for (const { tag } of secondaryTags) {
-      await supabase
+      await supabaseAdmin
         .from("customer_tags")
         .upsert(
           { customer_id: primary_id, tag },
@@ -104,16 +106,17 @@ export async function POST(request: Request) {
   }
 
   if (Object.keys(updates).length > 0) {
-    await supabase.from("customers").update(updates).eq("id", primary_id);
+    await supabaseAdmin.from("customers").update(updates).eq("id", primary_id);
   }
 
   // Soft-delete secondary
-  await supabase
+  await supabaseAdmin
     .from("customers")
     .update({ archived_at: new Date().toISOString() })
     .eq("id", secondary_id);
 
   await logAudit({
+      company_id: session.companyId,
     action: "customers_merged",
     category: "customers",
     entity_type: "customer",
@@ -123,6 +126,7 @@ export async function POST(request: Request) {
   });
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: primary_id,
     type: "note",
     description: `Merged with customer "${secondary.name}" (${secondary_id})`,
@@ -133,4 +137,9 @@ export async function POST(request: Request) {
     primary_id,
     merged_from: secondary_id,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

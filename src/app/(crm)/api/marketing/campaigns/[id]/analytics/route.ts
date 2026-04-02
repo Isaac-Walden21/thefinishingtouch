@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/marketing/campaigns/[id]/analytics — detailed campaign analytics
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: campaign } = await supabase
-    .from("campaigns")
-    .select("*")
+  const { data: campaign } = await supabaseAdmin
+    .from("campaigns").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -19,7 +23,7 @@ export async function GET(
   }
 
   // Get recipient-level data
-  const { data: recipients } = await supabase
+  const { data: recipients } = await supabaseAdmin
     .from("campaign_recipients")
     .select("*, contact:marketing_contacts(name, email)")
     .eq("campaign_id", id);
@@ -63,4 +67,9 @@ export async function GET(
       unsubscribed_at: r.unsubscribed_at,
     })),
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

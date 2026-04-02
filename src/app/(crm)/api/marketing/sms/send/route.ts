@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendSMS } from "@/lib/twilio";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/marketing/sms/send — send SMS campaign to tagged contacts
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const body = await request.json();
   const { message, tags, phone_numbers } = body as {
     message: string;
@@ -23,16 +28,15 @@ export async function POST(request: Request) {
 
   // Get phone numbers from tagged customers
   if (tags?.length) {
-    const { data: taggedCustomers } = await supabase
+    const { data: taggedCustomers } = await supabaseAdmin
       .from("customer_tags")
       .select("customer_id")
       .in("tag", tags);
 
     if (taggedCustomers?.length) {
       const ids = taggedCustomers.map((t) => t.customer_id);
-      const { data: customers } = await supabase
-        .from("customers")
-        .select("phone")
+      const { data: customers } = await supabaseAdmin
+        .from("customers").select("phone").eq("company_id", session.companyId)
         .in("id", ids)
         .not("phone", "is", null);
 
@@ -77,6 +81,7 @@ export async function POST(request: Request) {
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "sms_campaign_sent",
     category: "marketing",
     new_value: { sent, errors: errors.length, total: unique.length },
@@ -89,4 +94,9 @@ export async function POST(request: Request) {
     total: unique.length,
     errors: errors.length > 0 ? errors : undefined,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

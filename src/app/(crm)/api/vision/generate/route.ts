@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/session";
 
 function buildEnrichedPrompt(
   serviceType: string,
@@ -93,6 +94,9 @@ function suggestAddOns(serviceType: string): string[] {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   try {
     const formData = await request.formData();
     const serviceType = formData.get("service_type") as string;
@@ -199,5 +203,10 @@ export async function POST(request: NextRequest) {
       { error: "Failed to generate visualization" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

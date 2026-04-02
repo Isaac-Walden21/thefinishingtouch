@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/invoices/[id]/pdf — generate PDF version of invoice
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: invoice, error: invoiceError } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email, phone, address, city, state, zip)")
+  const { data: invoice, error: invoiceError } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email, phone, address, city, state, zip)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -34,4 +38,9 @@ export async function GET(
       phone: "(765) 555-0100",
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

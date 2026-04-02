@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/invoices/export — QuickBooks-compatible CSV export
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
-  let query = supabase
-    .from("invoices")
-    .select("*, customer:customers(name, email)")
+  let query = supabaseAdmin
+    .from("invoices").select("*, customer:customers(name, email)").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
@@ -67,6 +71,11 @@ export async function GET(request: NextRequest) {
       "Content-Disposition": `attachment; filename="invoices-${new Date().toISOString().split("T")[0]}.csv"`,
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 function esc(value: string): string {

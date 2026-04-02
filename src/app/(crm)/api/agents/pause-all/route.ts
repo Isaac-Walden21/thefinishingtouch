@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/agents/pause-all — kill switch: pause all agents
 export async function POST() {
-  const { data, error } = await supabase
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
+  const { data, error } = await supabaseAdmin
     .from("ai_agents")
     .update({ status: "paused" })
     .eq("status", "active")
@@ -15,6 +20,7 @@ export async function POST() {
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "agents_paused_all",
     category: "agents",
     new_value: { paused_count: data?.length ?? 0 },
@@ -25,4 +31,9 @@ export async function POST() {
     paused_count: data?.length ?? 0,
     agents: data,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/qb/sync — manual sync trigger (delegates to invoices/qb-sync)
 export async function POST() {
+  try {
+    const session = await getSessionUser();
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   try {
@@ -16,5 +20,10 @@ export async function POST() {
       { error: error instanceof Error ? error.message : "Sync failed" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

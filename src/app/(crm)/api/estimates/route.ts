@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/estimates — list all estimates
 export async function GET() {
-  const { data, error } = await supabase
-    .from("estimates")
-    .select("*, customer:customers(id, name, email, phone)")
+  try {
+    const session = await getSessionUser();
+
+  const { data, error } = await supabaseAdmin
+    .from("estimates").select("*, customer:customers(id, name, email, phone)").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -14,10 +17,18 @@ export async function GET() {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/estimates — create a new estimate
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+
   const body = await request.json();
 
   const {
@@ -43,9 +54,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("estimates")
-    .insert({
+  const { data, error } = await supabaseAdmin
+    .from("estimates").insert({
+      company_id: session.companyId,
       customer_id: customer_id ?? null,
       customer_name,
       project_type,
@@ -68,10 +79,16 @@ export async function POST(request: Request) {
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: customer_id ?? null,
     type: "quote",
     description: `Estimate created for ${project_type} — $${total ?? 0}`,
   });
 
   return NextResponse.json(data, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

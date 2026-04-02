@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/vision/[id]/annotations — save annotations on an iteration
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
   const { iteration_id, annotations } = body as {
@@ -21,7 +25,7 @@ export async function POST(
   }
 
   // Verify the iteration belongs to this project
-  const { data: iteration } = await supabase
+  const { data: iteration } = await supabaseAdmin
     .from("vision_iterations")
     .select("id, project_id")
     .eq("id", iteration_id)
@@ -35,7 +39,7 @@ export async function POST(
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("vision_annotations")
     .upsert(
       {
@@ -52,4 +56,9 @@ export async function POST(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

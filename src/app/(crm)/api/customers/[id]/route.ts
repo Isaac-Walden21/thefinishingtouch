@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit, logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // PATCH /api/customers/[id] — inline edit customer
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
 
@@ -22,9 +26,8 @@ export async function PATCH(
   }
 
   // Fetch old values for audit
-  const { data: old } = await supabase
-    .from("customers")
-    .select("*")
+  const { data: old } = await supabaseAdmin
+    .from("customers").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -32,7 +35,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("customers")
     .update(updates)
     .eq("id", id)
@@ -44,6 +47,7 @@ export async function PATCH(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "customer_updated",
     category: "customers",
     entity_type: "customer",
@@ -53,6 +57,11 @@ export async function PATCH(
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // DELETE /api/customers/[id] — archive customer (soft delete)
@@ -60,9 +69,12 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("customers")
     .update({ archived_at: new Date().toISOString() })
     .eq("id", id)
@@ -77,10 +89,16 @@ export async function DELETE(
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: id,
     type: "note",
     description: "Customer archived",
   });
 
   return NextResponse.json({ success: true, id: data.id });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

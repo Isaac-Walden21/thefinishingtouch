@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity, logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/cancel — void an invoice
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*")
+  const { data: invoice } = await supabaseAdmin
+    .from("invoices").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -26,7 +30,7 @@ export async function POST(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("invoices")
     .update({ status: "cancelled" })
     .eq("id", id);
@@ -36,6 +40,7 @@ export async function POST(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "invoice_cancelled",
     category: "invoices",
     entity_type: "invoice",
@@ -45,10 +50,16 @@ export async function POST(
   });
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: invoice.customer_id,
     type: "note",
     description: `Invoice ${invoice.invoice_number} cancelled`,
   });
 
   return NextResponse.json({ success: true, id });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

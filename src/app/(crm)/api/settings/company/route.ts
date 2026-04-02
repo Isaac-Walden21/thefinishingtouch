@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/settings/company — get company profile
 export async function GET() {
-  const { data } = await supabase
-    .from("company_settings")
-    .select("key, value")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
+  const { data } = await supabaseAdmin
+    .from("company_settings").select("key, value").eq("company_id", session.companyId)
     .in("key", ["company_name", "company_phone", "company_email", "company_address", "company_logo_url", "company_website", "tax_rate"]);
 
   const settings: Record<string, unknown> = {};
@@ -14,10 +18,19 @@ export async function GET() {
   }
 
   return NextResponse.json(settings);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PUT /api/settings/company — update company profile
 export async function PUT(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const body = await request.json();
 
   const allowed = ["company_name", "company_phone", "company_email", "company_address", "company_logo_url", "company_website", "tax_rate"];
@@ -30,7 +43,7 @@ export async function PUT(request: Request) {
   }
 
   for (const update of updates) {
-    await supabase
+    await supabaseAdmin
       .from("company_settings")
       .upsert(
         { key: update.key, value: update.value as Record<string, unknown> },
@@ -39,4 +52,9 @@ export async function PUT(request: Request) {
   }
 
   return NextResponse.json({ success: true, updated: updates.length });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

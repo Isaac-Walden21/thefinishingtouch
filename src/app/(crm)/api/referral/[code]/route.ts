@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/referral/[code] — public referral landing page data
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { code } = await params;
 
-  const { data: referral } = await supabase
-    .from("referrals")
-    .select("code, status, customer:customers(name)")
+  const { data: referral } = await supabaseAdmin
+    .from("referrals").select("code, status, customer:customers(name)").eq("company_id", session.companyId)
     .eq("code", code)
     .single();
 
@@ -29,4 +32,9 @@ export async function GET(
       website: "https://thefinishingtouchllc.com",
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

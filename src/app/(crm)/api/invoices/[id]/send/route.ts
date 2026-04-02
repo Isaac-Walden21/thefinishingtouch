@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/send — send invoice email to customer
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: invoice, error: invoiceError } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email)")
+  const { data: invoice, error: invoiceError } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -37,7 +41,7 @@ export async function POST(
   // });
 
   // Update invoice status to sent
-  await supabase
+  await supabaseAdmin
     .from("invoices")
     .update({ status: "sent", sent_at: new Date().toISOString() })
     .eq("id", id);
@@ -47,4 +51,9 @@ export async function POST(
     message: `Invoice sent to ${customer.email}`,
     invoice_number: invoice.invoice_number,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

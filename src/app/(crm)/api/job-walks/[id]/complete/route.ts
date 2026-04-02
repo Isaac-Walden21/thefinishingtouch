@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity, logAudit } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/job-walks/[id]/complete — mark job walk as complete
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data: walk } = await supabase
-    .from("job_walks")
-    .select("*, customer:customers(id, name)")
+  const { data: walk } = await supabaseAdmin
+    .from("job_walks").select("*, customer:customers(id, name)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -31,7 +34,7 @@ export async function POST(
 
   const now = new Date().toISOString();
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("job_walks")
     .update({
       status: "completed",
@@ -48,6 +51,7 @@ export async function POST(
   const customerName = walk.customer?.name ?? "Unknown";
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: walk.customer_id,
     lead_id: walk.lead_id ?? null,
     type: "note",
@@ -56,6 +60,7 @@ export async function POST(
   });
 
   await logAudit({
+      company_id: session.companyId,
     action: "job_walk_completed",
     category: "job_walks",
     entity_type: "job_walk",
@@ -65,4 +70,9 @@ export async function POST(
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

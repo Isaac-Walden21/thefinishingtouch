@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/estimates/templates — list all estimate templates
 export async function GET() {
-  const { data, error } = await supabase
+  try {
+    const session = await getSessionUser();
+
+  const { data, error } = await supabaseAdmin
     .from("estimate_templates")
     .select("*")
     .order("created_at", { ascending: false });
@@ -13,4 +17,9 @@ export async function GET() {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

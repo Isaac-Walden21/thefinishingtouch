@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/customers/duplicates — check for potential duplicate customers
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const phone = searchParams.get("phone");
   const name = searchParams.get("name");
@@ -19,9 +23,8 @@ export async function GET(request: NextRequest) {
   // Exact phone match
   if (phone) {
     const normalized = phone.replace(/\D/g, "");
-    const { data } = await supabase
-      .from("customers")
-      .select("id, name, phone")
+    const { data } = await supabaseAdmin
+      .from("customers").select("id, name, phone").eq("company_id", session.companyId)
       .is("archived_at", null);
 
     if (data) {
@@ -35,9 +38,8 @@ export async function GET(request: NextRequest) {
 
   // Fuzzy name match (case-insensitive contains)
   if (name) {
-    const { data } = await supabase
-      .from("customers")
-      .select("id, name, phone")
+    const { data } = await supabaseAdmin
+      .from("customers").select("id, name, phone").eq("company_id", session.companyId)
       .is("archived_at", null)
       .ilike("name", `%${name}%`);
 
@@ -52,4 +54,9 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ duplicates });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
