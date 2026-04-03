@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/settings/data/export — export all CRM data as JSON
 export async function POST() {
   try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
+  try {
     const [customers, leads, activities, invoices, payments, estimates, events] =
       await Promise.all([
-        supabase.from("customers").select("*").is("archived_at", null),
-        supabase.from("leads").select("*"),
-        supabase.from("activities").select("*"),
-        supabase.from("invoices").select("*"),
-        supabase.from("payments").select("*"),
-        supabase.from("estimates").select("*"),
-        supabase.from("calendar_events").select("*"),
+        supabaseAdmin.from("customers").select("*").eq("company_id", session.companyId).is("archived_at", null),
+        supabaseAdmin.from("leads").select("*").eq("company_id", session.companyId),
+        supabaseAdmin.from("activities").select("*").eq("company_id", session.companyId),
+        supabaseAdmin.from("invoices").select("*").eq("company_id", session.companyId),
+        supabaseAdmin.from("payments").select("*").eq("company_id", session.companyId),
+        supabaseAdmin.from("estimates").select("*").eq("company_id", session.companyId),
+        supabaseAdmin.from("calendar_events").select("*").eq("company_id", session.companyId),
       ]);
 
     const exportData = {
@@ -37,5 +42,10 @@ export async function POST() {
       { error: error instanceof Error ? error.message : "Export failed" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

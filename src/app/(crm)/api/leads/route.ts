@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit, logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/leads — list all leads with customer join
 export async function GET() {
-  const { data, error } = await supabase
-    .from("leads")
-    .select("*, customer:customers(id, name, email, phone)")
+  try {
+    const session = await getSessionUser();
+
+  const { data, error } = await supabaseAdmin
+    .from("leads").select("*, customer:customers(id, name, email, phone)").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -14,10 +17,18 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? []);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/leads — create a new lead
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+
   const body = await request.json();
 
   if (!body.customer_id) {
@@ -27,9 +38,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("leads")
-    .insert({
+  const { data, error } = await supabaseAdmin
+    .from("leads").insert({
+      company_id: session.companyId,
       customer_id: body.customer_id,
       status: body.status ?? "new",
       source: body.source ?? null,
@@ -48,6 +59,7 @@ export async function POST(request: Request) {
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "lead_created",
     category: "leads",
     entity_type: "lead",
@@ -56,6 +68,7 @@ export async function POST(request: Request) {
   });
 
   await logActivity({
+      company_id: session.companyId,
     lead_id: data.id,
     customer_id: body.customer_id,
     type: "note",
@@ -63,4 +76,9 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json(data, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
+import { supabaseAdmin } from "@/lib/supabase";
 
-// GET /api/team-members — list active team members
 export async function GET() {
-  const { data, error } = await supabase
-    .from("team_members")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+  try {
+    const session = await getSessionUser();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("company_id", session.companyId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data ?? []);
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json(data ?? []);
 }

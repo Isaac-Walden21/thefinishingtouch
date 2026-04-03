@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/settings/company/logo — upload company logo
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const formData = await request.formData();
   const file = formData.get("logo") as File | null;
 
@@ -30,7 +35,7 @@ export async function POST(request: Request) {
   const fileName = `company-logo-${Date.now()}.${ext}`;
 
   const bytes = await file.arrayBuffer();
-  const { data, error } = await supabase.storage
+  const { data, error } = await supabaseAdmin.storage
     .from("assets")
     .upload(fileName, bytes, {
       contentType: file.type,
@@ -41,12 +46,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseAdmin.storage
     .from("assets")
     .getPublicUrl(data.path);
 
   // Save to company settings
-  await supabase
+  await supabaseAdmin
     .from("company_settings")
     .upsert(
       { key: "company_logo_url", value: { url: urlData.publicUrl } },
@@ -57,4 +62,9 @@ export async function POST(request: Request) {
     success: true,
     url: urlData.publicUrl,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

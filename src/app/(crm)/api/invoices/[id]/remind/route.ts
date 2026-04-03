@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendEmail } from "@/lib/send-email";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/remind — send payment reminder email
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email)")
+  const { data: invoice } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -52,6 +56,7 @@ export async function POST(
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: invoice.customer_id,
     type: "email",
     description: `Payment reminder sent for invoice ${invoice.invoice_number}`,
@@ -61,4 +66,9 @@ export async function POST(
     success: true,
     message: `Reminder sent to ${email}`,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

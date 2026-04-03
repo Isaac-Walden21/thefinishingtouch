@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/agents — list all AI agents
 export async function GET() {
-  const { data, error } = await supabase
-    .from("ai_agents")
-    .select("*")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
+  const { data, error } = await supabaseAdmin
+    .from("ai_agents").select("*").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -14,10 +18,19 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? []);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/agents — create a new AI agent
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const body = await request.json();
 
   if (!body.name) {
@@ -27,9 +40,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("ai_agents")
-    .insert({
+  const { data, error } = await supabaseAdmin
+    .from("ai_agents").insert({
+      company_id: session.companyId,
       name: body.name,
       type: body.type ?? "general",
       status: body.status ?? "active",
@@ -46,6 +59,7 @@ export async function POST(request: Request) {
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "agent_created",
     category: "agents",
     entity_type: "ai_agent",
@@ -54,4 +68,9 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json(data, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

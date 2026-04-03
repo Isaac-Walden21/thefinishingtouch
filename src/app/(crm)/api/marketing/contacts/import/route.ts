@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/marketing/contacts/import — CSV import of contacts
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const body = await request.json();
   const { contacts } = body as {
     contacts: Array<{
@@ -36,9 +41,8 @@ export async function POST(request: Request) {
     }
 
     // Check for existing
-    const { data: existing } = await supabase
-      .from("marketing_contacts")
-      .select("id")
+    const { data: existing } = await supabaseAdmin
+      .from("marketing_contacts").select("id").eq("company_id", session.companyId)
       .eq("email", contact.email)
       .limit(1)
       .single();
@@ -48,7 +52,8 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const { error } = await supabase.from("marketing_contacts").insert({
+    const { error } = await supabaseAdmin.from("marketing_contacts").insert({
+      company_id: session.companyId,
       name: contact.name,
       email: contact.email,
       tags: contact.tags ?? [],
@@ -69,4 +74,9 @@ export async function POST(request: Request) {
     errors: errors.length > 0 ? errors : undefined,
     total_submitted: contacts.length,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

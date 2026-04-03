@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/job-walks — list all job walks
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const customerId = searchParams.get("customer_id");
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
 
-  let query = supabase
-    .from("job_walks")
-    .select("*, customer:customers(id, name, email, phone, address)")
+  let query = supabaseAdmin
+    .from("job_walks").select("*, customer:customers(id, name, email, phone, address)").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
@@ -27,10 +30,18 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/job-walks — create a new job walk
 export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const body = await request.json();
   const { customer_id, lead_id, calendar_event_id, gps_lat, gps_lng, created_by } = body;
 
@@ -42,9 +53,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify customer exists
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .select("id, name")
+  const { data: customer, error: customerError } = await supabaseAdmin
+    .from("customers").select("id, name").eq("company_id", session.companyId)
     .eq("id", customer_id)
     .single();
 
@@ -61,9 +71,9 @@ export async function POST(request: NextRequest) {
     weather = await fetchWeather(gps_lat, gps_lng);
   }
 
-  const { data, error } = await supabase
-    .from("job_walks")
-    .insert({
+  const { data, error } = await supabaseAdmin
+    .from("job_walks").insert({
+      company_id: session.companyId,
       customer_id,
       lead_id: lead_id ?? null,
       calendar_event_id: calendar_event_id ?? null,
@@ -80,6 +90,7 @@ export async function POST(request: NextRequest) {
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id,
     lead_id: lead_id ?? null,
     type: "note",
@@ -88,6 +99,11 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(data, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 /** Fetch weather from OpenWeatherMap. Returns null on failure. */

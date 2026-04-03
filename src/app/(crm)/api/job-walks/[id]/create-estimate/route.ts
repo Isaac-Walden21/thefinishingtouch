@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity, logAudit } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/job-walks/[id]/create-estimate — create estimate from job walk data
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
   // Fetch job walk with customer
-  const { data: walk } = await supabase
-    .from("job_walks")
-    .select("*, customer:customers(id, name, email, phone, address)")
+  const { data: walk } = await supabaseAdmin
+    .from("job_walks").select("*, customer:customers(id, name, email, phone, address)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -73,9 +76,9 @@ export async function POST(
 
   // Create the estimate record
   const customerName = walk.customer?.name ?? "Customer";
-  const { data: estimate, error: estimateError } = await supabase
-    .from("estimates")
-    .insert({
+  const { data: estimate, error: estimateError } = await supabaseAdmin
+    .from("estimates").insert({
+      company_id: session.companyId,
       customer_id: walk.customer_id,
       customer_name: customerName,
       project_type: projectType,
@@ -110,12 +113,13 @@ export async function POST(
   }
 
   // Update job walk status to "estimated"
-  await supabase
+  await supabaseAdmin
     .from("job_walks")
     .update({ status: "estimated" })
     .eq("id", id);
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: walk.customer_id,
     lead_id: walk.lead_id ?? null,
     type: "quote",
@@ -124,6 +128,7 @@ export async function POST(
   });
 
   await logAudit({
+      company_id: session.companyId,
     action: "estimate_created_from_job_walk",
     category: "estimates",
     entity_type: "estimate",
@@ -132,6 +137,11 @@ export async function POST(
   });
 
   return NextResponse.json({ estimate_id: estimate.id, estimate }, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ── Pricing constants (mirrors /api/estimates/generate) ──

@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendEmail } from "@/lib/send-email";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/resend — resend invoice email
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email)")
+  const { data: invoice } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -52,12 +56,13 @@ export async function POST(
   }
 
   // Update sent_at
-  await supabase
+  await supabaseAdmin
     .from("invoices")
     .update({ sent_at: new Date().toISOString(), status: invoice.status === "draft" ? "sent" : invoice.status })
     .eq("id", id);
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: invoice.customer_id,
     type: "email",
     description: `Invoice ${invoice.invoice_number} resent to ${email}`,
@@ -67,4 +72,9 @@ export async function POST(
     success: true,
     message: `Invoice resent to ${email}`,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { validateApiKey, rateLimit, unauthorizedResponse, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
+import { getSessionUser } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   if (!validateApiKey(request)) return unauthorizedResponse();
 
   const rl = rateLimit("leads-from-call", 30);
@@ -32,9 +36,9 @@ export async function POST(request: NextRequest) {
       service_type,
     });
 
-    const { data: lead, error } = await supabase
-      .from("leads")
-      .insert({
+    const { data: lead, error } = await supabaseAdmin
+      .from("leads").insert({
+      company_id: session.companyId,
         customer_id: customerId,
         status: "new",
         project_type: service_type ?? null,
@@ -53,5 +57,10 @@ export async function POST(request: NextRequest) {
       { error: error instanceof Error ? error.message : "Failed to create lead" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

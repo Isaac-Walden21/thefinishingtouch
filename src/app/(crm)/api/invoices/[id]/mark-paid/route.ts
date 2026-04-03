@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/mark-paid — record a manual payment
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
   const body = await request.json();
   const { method, amount, notes } = body as {
@@ -22,9 +27,8 @@ export async function POST(
     );
   }
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*")
+  const { data: invoice } = await supabaseAdmin
+    .from("invoices").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -35,7 +39,8 @@ export async function POST(
   const paymentAmount = amount ?? Number(invoice.total);
 
   // Create payment record
-  const { error: payError } = await supabase.from("payments").insert({
+  const { error: payError } = await supabaseAdmin.from("payments").insert({
+      company_id: session.companyId,
     invoice_id: id,
     amount: paymentAmount,
     method,
@@ -47,9 +52,8 @@ export async function POST(
   }
 
   // Check total payments to determine status
-  const { data: allPayments } = await supabase
-    .from("payments")
-    .select("amount")
+  const { data: allPayments } = await supabaseAdmin
+    .from("payments").select("amount").eq("company_id", session.companyId)
     .eq("invoice_id", id);
 
   const totalPaid = (allPayments ?? []).reduce(
@@ -59,7 +63,7 @@ export async function POST(
 
   const newStatus = totalPaid >= Number(invoice.total) ? "paid" : "partial";
 
-  await supabase
+  await supabaseAdmin
     .from("invoices")
     .update({
       status: newStatus,
@@ -69,6 +73,7 @@ export async function POST(
     .eq("id", id);
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: invoice.customer_id,
     type: "payment",
     description: `Manual payment of $${paymentAmount.toLocaleString()} (${method}) recorded for invoice ${invoice.invoice_number}`,
@@ -80,4 +85,9 @@ export async function POST(
     total_paid: totalPaid,
     remaining: Number(invoice.total) - totalPaid,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

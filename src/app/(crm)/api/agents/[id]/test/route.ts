@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { sendEmail } from "@/lib/send-email";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/agents/[id]/test — send a test message from an agent
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { id } = await params;
   const body = await request.json();
   const { test_email } = body as { test_email: string };
@@ -18,9 +23,8 @@ export async function POST(
     );
   }
 
-  const { data: agent } = await supabase
-    .from("ai_agents")
-    .select("*")
+  const { data: agent } = await supabaseAdmin
+    .from("ai_agents").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -29,7 +33,7 @@ export async function POST(
   }
 
   // Get the agent's template
-  const { data: template } = await supabase
+  const { data: template } = await supabaseAdmin
     .from("agent_templates")
     .select("*")
     .eq("agent_id", id)
@@ -62,4 +66,9 @@ export async function POST(
     message: `Test message sent to ${test_email}`,
     agent: agent.name,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

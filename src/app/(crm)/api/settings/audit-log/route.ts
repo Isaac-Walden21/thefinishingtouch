@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/settings/audit-log — get audit log entries
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const limit = parseInt(searchParams.get("limit") ?? "50", 10);
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
 
-  let query = supabase
-    .from("audit_log")
-    .select("*, user:team_members(id, name)", { count: "exact" })
+  let query = supabaseAdmin
+    .from("audit_log").select("*, user:users(id, name)", { count: "exact" }).eq("company_id", session.companyId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -30,4 +34,9 @@ export async function GET(request: NextRequest) {
     limit,
     offset,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/settings/defaults — estimate/invoice defaults
 export async function GET() {
-  const { data } = await supabase
-    .from("company_settings")
-    .select("key, value")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
+  const { data } = await supabaseAdmin
+    .from("company_settings").select("key, value").eq("company_id", session.companyId)
     .in("key", [
       "default_margin",
       "default_tax_rate",
@@ -20,10 +24,19 @@ export async function GET() {
   }
 
   return NextResponse.json(defaults);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PUT /api/settings/defaults — update defaults
 export async function PUT(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const body = await request.json();
 
   const allowed = [
@@ -36,7 +49,7 @@ export async function PUT(request: Request) {
 
   for (const key of allowed) {
     if (body[key] !== undefined) {
-      await supabase
+      await supabaseAdmin
         .from("company_settings")
         .upsert(
           { key, value: body[key] },
@@ -46,4 +59,9 @@ export async function PUT(request: Request) {
   }
 
   return NextResponse.json({ success: true });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/session";
 
 interface GenerateEstimateInput {
   project_type: string;
@@ -301,6 +302,9 @@ function generateEstimate(input: GenerateEstimateInput) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSessionUser();
+
+  try {
     const body = (await request.json()) as GenerateEstimateInput;
 
     if (!body.project_type) {
@@ -319,5 +323,10 @@ export async function POST(request: NextRequest) {
       { error: "Failed to generate estimate" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

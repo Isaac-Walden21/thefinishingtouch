@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
 
@@ -23,7 +27,7 @@ export async function PUT(
   if (service_type !== undefined) updates.service_type = service_type;
   if (project_description !== undefined) updates.project_description = project_description;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("calendar_events")
     .update(updates)
     .eq("id", id)
@@ -38,15 +42,23 @@ export async function PUT(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("calendar_events")
     .update({ status: "cancelled" })
     .eq("id", id)
@@ -61,4 +73,9 @@ export async function DELETE(
   }
 
   return NextResponse.json({ success: true, id: data.id });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

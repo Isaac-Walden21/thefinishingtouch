@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/invoices/[id] — get single invoice with customer join
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email, phone, address, city, state, zip)")
+  const { data, error } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email, phone, address, city, state, zip)").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -20,6 +24,11 @@ export async function GET(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PATCH /api/invoices/[id] — update invoice
@@ -27,6 +36,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
   const body = await request.json();
 
@@ -45,9 +58,8 @@ export async function PATCH(
   }
 
   // Fetch old values for audit
-  const { data: old } = await supabase
-    .from("invoices")
-    .select("*")
+  const { data: old } = await supabaseAdmin
+    .from("invoices").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -55,7 +67,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("invoices")
     .update(updates)
     .eq("id", id)
@@ -67,6 +79,7 @@ export async function PATCH(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "invoice_updated",
     category: "invoices",
     entity_type: "invoice",
@@ -76,4 +89,9 @@ export async function PATCH(
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

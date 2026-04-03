@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/job-walks/[id]/voice — upload voice note
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
   // Verify job walk exists
-  const { data: walk } = await supabase
-    .from("job_walks")
-    .select("id, voice_note_url")
+  const { data: walk } = await supabaseAdmin
+    .from("job_walks").select("id, voice_note_url").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -60,7 +63,7 @@ export async function POST(
   if (walk.voice_note_url) {
     const oldPath = extractStoragePath(walk.voice_note_url);
     if (oldPath) {
-      await supabase.storage.from("job-walk-photos").remove([oldPath]);
+      await supabaseAdmin.storage.from("job-walk-photos").remove([oldPath]);
     }
   }
 
@@ -68,7 +71,7 @@ export async function POST(
   const fileName = `${id}/voice-${Date.now()}.${ext}`;
 
   const bytes = await file.arrayBuffer();
-  const { data: uploaded, error: uploadError } = await supabase.storage
+  const { data: uploaded, error: uploadError } = await supabaseAdmin.storage
     .from("job-walk-photos")
     .upload(fileName, bytes, {
       contentType: file.type,
@@ -79,12 +82,12 @@ export async function POST(
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseAdmin.storage
     .from("job-walk-photos")
     .getPublicUrl(uploaded.path);
 
   // Update job walk record
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("job_walks")
     .update({ voice_note_url: urlData.publicUrl })
     .eq("id", id)
@@ -96,6 +99,11 @@ export async function POST(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 /** Extract the storage path from a full public URL */

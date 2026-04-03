@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/payments — list payments with optional invoice_id filter
 export async function GET(request: Request) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const invoiceId = searchParams.get("invoice_id");
 
-  let query = supabase
-    .from("payments")
-    .select("*")
+  let query = supabaseAdmin
+    .from("payments").select("*").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (invoiceId) {
@@ -22,4 +25,9 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json(data ?? []);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

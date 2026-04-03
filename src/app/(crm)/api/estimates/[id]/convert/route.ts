@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/estimates/[id]/convert — convert estimate to invoice
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data: estimate } = await supabase
-    .from("estimates")
-    .select("*")
+  const { data: estimate } = await supabaseAdmin
+    .from("estimates").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -43,9 +46,9 @@ export async function POST(
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + 30);
 
-  const { data: invoice, error } = await supabase
-    .from("invoices")
-    .insert({
+  const { data: invoice, error } = await supabaseAdmin
+    .from("invoices").insert({
+      company_id: session.companyId,
       customer_id: estimate.customer_id,
       estimate_id: id,
       status: "draft",
@@ -65,16 +68,22 @@ export async function POST(
   }
 
   // Update estimate status
-  await supabase
+  await supabaseAdmin
     .from("estimates")
     .update({ status: "accepted" })
     .eq("id", id);
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: estimate.customer_id,
     type: "quote",
     description: `Estimate converted to invoice ${invoice.invoice_number}`,
   });
 
   return NextResponse.json(invoice, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/agents/[id]/metrics — performance metrics for an agent
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { id } = await params;
 
-  const { data: agent } = await supabase
-    .from("ai_agents")
-    .select("*")
+  const { data: agent } = await supabaseAdmin
+    .from("ai_agents").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -19,7 +23,7 @@ export async function GET(
   }
 
   // Get action counts by status
-  const { data: actions } = await supabase
+  const { data: actions } = await supabaseAdmin
     .from("agent_actions")
     .select("status, action_type, created_at")
     .eq("agent_id", id)
@@ -72,4 +76,9 @@ export async function GET(
     success_rate: successRate,
     recent_actions: allActions.slice(0, 10),
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

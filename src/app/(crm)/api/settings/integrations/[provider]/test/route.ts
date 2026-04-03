@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/settings/integrations/[provider]/test — test integration connection
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ provider: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { provider } = await params;
 
-  const { data: integration } = await supabase
+  const { data: integration } = await supabaseAdmin
     .from("integrations")
     .select("*")
     .eq("provider", provider)
@@ -62,7 +67,7 @@ export async function POST(
     }
 
     // Update integration status based on test
-    await supabase
+    await supabaseAdmin
       .from("integrations")
       .update({
         status: testResult.success ? "connected" : "error",
@@ -79,5 +84,10 @@ export async function POST(
       },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

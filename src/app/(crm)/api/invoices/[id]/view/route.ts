@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/invoices/[id]/view — log read receipt when customer views invoice
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
 
   // In production: update invoices SET viewed_at = now() WHERE id = $1 AND viewed_at IS NULL
@@ -15,4 +20,9 @@ export async function POST(
     invoice_id: id,
     viewed_at: new Date().toISOString(),
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

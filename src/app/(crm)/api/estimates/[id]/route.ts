@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // PATCH /api/estimates/[id] — update estimate
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
 
@@ -26,9 +30,8 @@ export async function PATCH(
   }
 
   // Save revision before update
-  const { data: current } = await supabase
-    .from("estimates")
-    .select("*")
+  const { data: current } = await supabaseAdmin
+    .from("estimates").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -37,19 +40,19 @@ export async function PATCH(
   }
 
   // Get next revision number
-  const { count } = await supabase
+  const { count } = await supabaseAdmin
     .from("estimate_revisions")
     .select("*", { count: "exact", head: true })
     .eq("estimate_id", id);
 
-  await supabase.from("estimate_revisions").insert({
+  await supabaseAdmin.from("estimate_revisions").insert({
     estimate_id: id,
     revision_number: (count ?? 0) + 1,
     snapshot: current,
     created_by: body.created_by ?? null,
   });
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("estimates")
     .update(updates)
     .eq("id", id)
@@ -61,6 +64,7 @@ export async function PATCH(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "estimate_updated",
     category: "estimates",
     entity_type: "estimate",
@@ -70,4 +74,9 @@ export async function PATCH(
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

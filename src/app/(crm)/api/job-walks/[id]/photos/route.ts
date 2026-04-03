@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/job-walks/[id]/photos — upload a photo
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
   // Verify job walk exists
-  const { data: walk } = await supabase
-    .from("job_walks")
-    .select("id")
+  const { data: walk } = await supabaseAdmin
+    .from("job_walks").select("id").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -68,7 +71,7 @@ export async function POST(
   const fileName = `${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const bytes = await file.arrayBuffer();
-  const { data: uploaded, error: uploadError } = await supabase.storage
+  const { data: uploaded, error: uploadError } = await supabaseAdmin.storage
     .from("job-walk-photos")
     .upload(fileName, bytes, {
       contentType: file.type,
@@ -79,14 +82,13 @@ export async function POST(
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseAdmin.storage
     .from("job-walk-photos")
     .getPublicUrl(uploaded.path);
 
   // Get max sort_order for this job walk
-  const { data: maxSort } = await supabase
-    .from("job_walk_photos")
-    .select("sort_order")
+  const { data: maxSort } = await supabaseAdmin
+    .from("job_walk_photos").select("sort_order").eq("company_id", session.companyId)
     .eq("job_walk_id", id)
     .order("sort_order", { ascending: false })
     .limit(1)
@@ -94,9 +96,9 @@ export async function POST(
 
   const nextSort = (maxSort?.sort_order ?? -1) + 1;
 
-  const { data: photo, error: insertError } = await supabase
-    .from("job_walk_photos")
-    .insert({
+  const { data: photo, error: insertError } = await supabaseAdmin
+    .from("job_walk_photos").insert({
+      company_id: session.companyId,
       job_walk_id: id,
       photo_url: urlData.publicUrl,
       caption: caption || null,
@@ -111,4 +113,9 @@ export async function POST(
   }
 
   return NextResponse.json(photo, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

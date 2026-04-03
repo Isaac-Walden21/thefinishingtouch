@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/calendar/route-optimize — get optimal route for a day's visits
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const date = searchParams.get("date");
   const teamMemberId = searchParams.get("team_member_id");
@@ -17,9 +21,8 @@ export async function GET(request: NextRequest) {
   const startOfDay = `${date}T00:00:00Z`;
   const endOfDay = `${date}T23:59:59Z`;
 
-  let query = supabase
-    .from("calendar_events")
-    .select("*")
+  let query = supabaseAdmin
+    .from("calendar_events").select("*").eq("company_id", session.companyId)
     .eq("type", "quote_visit")
     .eq("status", "scheduled")
     .gte("start_time", startOfDay)
@@ -66,4 +69,9 @@ export async function GET(request: NextRequest) {
     maps_url: mapsUrl,
     note: "Stops are ordered by scheduled time. Use the maps_url for turn-by-turn navigation.",
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

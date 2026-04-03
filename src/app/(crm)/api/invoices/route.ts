@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit, logActivity } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/invoices — list all invoices with customer join
 export async function GET() {
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*, customer:customers(id, name, email, phone)")
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
+  const { data, error } = await supabaseAdmin
+    .from("invoices").select("*, customer:customers(id, name, email, phone)").eq("company_id", session.companyId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -14,10 +18,19 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? []);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/invoices — create a new invoice
 export async function POST(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const body = await request.json();
 
   if (!body.customer_id) {
@@ -27,9 +40,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("invoices")
-    .insert({
+  const { data, error } = await supabaseAdmin
+    .from("invoices").insert({
+      company_id: session.companyId,
       customer_id: body.customer_id,
       estimate_id: body.estimate_id ?? null,
       invoice_number: body.invoice_number,
@@ -54,6 +67,7 @@ export async function POST(request: Request) {
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "invoice_created",
     category: "invoices",
     entity_type: "invoice",
@@ -62,10 +76,16 @@ export async function POST(request: Request) {
   });
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: body.customer_id,
     type: "note",
     description: `Invoice ${data.invoice_number ?? data.id} created`,
   });
 
   return NextResponse.json(data, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

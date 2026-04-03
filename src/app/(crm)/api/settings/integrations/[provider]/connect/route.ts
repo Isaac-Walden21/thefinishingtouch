@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/settings/integrations/[provider]/connect — connect an integration
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ provider: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { provider } = await params;
   const body = await request.json();
   const { config } = body as { config?: Record<string, unknown> };
@@ -19,7 +24,7 @@ export async function POST(
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("integrations")
     .upsert(
       {
@@ -38,10 +43,16 @@ export async function POST(
   }
 
   await logAudit({
+      company_id: session.companyId,
     action: "integration_connected",
     category: "integrations",
     new_value: { provider },
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

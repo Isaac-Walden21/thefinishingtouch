@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/estimates/approve/[token] — public: get estimate data for approval page
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { token } = await params;
 
-  const { data: approval } = await supabase
+  const { data: approval } = await supabaseAdmin
     .from("estimate_approvals")
     .select("*, estimate:estimates(*)")
     .eq("token", token)
@@ -37,6 +41,11 @@ export async function GET(
       materials: approval.estimate.materials,
     },
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // POST /api/estimates/approve/[token] — customer accepts or requests changes
@@ -44,6 +53,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { token } = await params;
   const body = await request.json();
   const { action, response } = body as {
@@ -58,7 +70,7 @@ export async function POST(
     );
   }
 
-  const { data: approval } = await supabase
+  const { data: approval } = await supabaseAdmin
     .from("estimate_approvals")
     .select("*, estimate:estimates(id, customer_id, project_type)")
     .eq("token", token)
@@ -81,7 +93,7 @@ export async function POST(
 
   const newStatus = action === "accept" ? "accepted" : "changes_requested";
 
-  await supabase
+  await supabaseAdmin
     .from("estimate_approvals")
     .update({
       status: newStatus,
@@ -91,13 +103,14 @@ export async function POST(
 
   // Update estimate status
   if (action === "accept") {
-    await supabase
+    await supabaseAdmin
       .from("estimates")
       .update({ status: "accepted" })
       .eq("id", approval.estimate_id);
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id: approval.estimate?.customer_id ?? null,
     type: "note",
     description:
@@ -114,4 +127,9 @@ export async function POST(
         ? "Thank you! Your estimate has been approved. We will be in touch shortly."
         : "Thank you for your feedback. We will review your changes and follow up.",
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

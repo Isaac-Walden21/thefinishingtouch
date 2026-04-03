@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/vision/[id]/social — generate social media template data
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
 
-  const { data: project } = await supabase
-    .from("vision_projects")
-    .select("*")
+  const { data: project } = await supabaseAdmin
+    .from("vision_projects").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -18,7 +21,7 @@ export async function POST(
     return NextResponse.json({ error: "Vision project not found" }, { status: 404 });
   }
 
-  const { data: iterations } = await supabase
+  const { data: iterations } = await supabaseAdmin
     .from("vision_iterations")
     .select("*")
     .eq("project_id", id)
@@ -50,4 +53,9 @@ export async function POST(
       "HomeImprovement",
     ],
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

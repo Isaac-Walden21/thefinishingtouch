@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/marketing/campaigns/[id]/schedule — schedule a campaign
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
   const body = await request.json();
   const { scheduled_at } = body as { scheduled_at: string };
@@ -25,9 +30,8 @@ export async function POST(
     );
   }
 
-  const { data: campaign } = await supabase
-    .from("campaigns")
-    .select("*")
+  const { data: campaign } = await supabaseAdmin
+    .from("campaigns").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -43,13 +47,12 @@ export async function POST(
   }
 
   // Count matching recipients
-  const { count } = await supabase
-    .from("marketing_contacts")
-    .select("*", { count: "exact", head: true })
+  const { count } = await supabaseAdmin
+    .from("marketing_contacts").select("*", { count: "exact", head: true }).eq("company_id", session.companyId)
     .eq("subscribed", true)
     .overlaps("tags", campaign.segment_tags?.length ? campaign.segment_tags : []);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("campaigns")
     .update({
       status: "scheduled",
@@ -65,4 +68,9 @@ export async function POST(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

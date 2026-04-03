@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // GET /api/qb/status — get QuickBooks sync status
 export async function GET() {
-  const { data: integration } = await supabase
+  try {
+    const session = await getSessionUser();
+
+  const { data: integration } = await supabaseAdmin
     .from("integrations")
     .select("*")
     .eq("provider", "quickbooks")
@@ -23,4 +27,9 @@ export async function GET() {
     last_activity: integration.last_activity,
     realm_id: (integration.config as Record<string, unknown>)?.realm_id ?? null,
   });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

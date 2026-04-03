@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/session";
 
 // PATCH /api/job-walks/[id]/photos/[photoId] — update photo metadata
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id, photoId } = await params;
   const body = await request.json();
 
@@ -39,7 +43,7 @@ export async function PATCH(
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("job_walk_photos")
     .update(updates)
     .eq("id", photoId)
@@ -59,6 +63,11 @@ export async function PATCH(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // DELETE /api/job-walks/[id]/photos/[photoId] — delete photo
@@ -66,12 +75,14 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id, photoId } = await params;
 
   // Get photo URL before deleting record
-  const { data: photo } = await supabase
-    .from("job_walk_photos")
-    .select("photo_url")
+  const { data: photo } = await supabaseAdmin
+    .from("job_walk_photos").select("photo_url").eq("company_id", session.companyId)
     .eq("id", photoId)
     .eq("job_walk_id", id)
     .single();
@@ -86,11 +97,11 @@ export async function DELETE(
   // Remove from storage
   const storagePath = extractStoragePath(photo.photo_url);
   if (storagePath) {
-    await supabase.storage.from("job-walk-photos").remove([storagePath]);
+    await supabaseAdmin.storage.from("job-walk-photos").remove([storagePath]);
   }
 
   // Delete database record
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("job_walk_photos")
     .delete()
     .eq("id", photoId)
@@ -101,6 +112,11 @@ export async function DELETE(
   }
 
   return NextResponse.json({ success: true, id: photoId });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 /** Extract the storage path from a full public URL */

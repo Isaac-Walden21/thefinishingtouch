@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // POST /api/marketing/campaigns/[id]/ab-test — configure A/B test
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
+
   const { id } = await params;
   const body = await request.json();
   const { variant_b_subject, variant_b_body, split_percentage } = body as {
@@ -21,9 +26,8 @@ export async function POST(
     );
   }
 
-  const { data: campaign } = await supabase
-    .from("campaigns")
-    .select("*")
+  const { data: campaign } = await supabaseAdmin
+    .from("campaigns").select("*").eq("company_id", session.companyId)
     .eq("id", id)
     .single();
 
@@ -45,7 +49,7 @@ export async function POST(
     split_percentage: split_percentage ?? 50,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("campaigns")
     .update({ ab_test_config: abConfig })
     .eq("id", id)
@@ -57,4 +61,9 @@ export async function POST(
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

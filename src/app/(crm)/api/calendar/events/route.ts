@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { validateApiKey, rateLimit, rateLimitedResponse, extractVapiArgs, vapiResponse } from "@/lib/api-auth";
 import { findOrCreateCustomer } from "@/lib/customer-upsert";
+import { getSessionUser } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const { searchParams } = new URL(request.url);
   const start = searchParams.get("start");
   const end = searchParams.get("end");
   const teamMemberId = searchParams.get("team_member_id");
 
-  let query = supabase
-    .from("calendar_events")
-    .select("*, team_member:team_members(id, name, color)")
+  let query = supabaseAdmin
+    .from("calendar_events").select("*, team_member:team_members(id, name, color)").eq("company_id", session.companyId)
     .neq("status", "cancelled")
     .order("start_time", { ascending: true });
 
@@ -25,9 +28,17 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionUser();
+
   const isApiKey = validateApiKey(request);
   if (isApiKey) {
     const rl = rateLimit("events-create", 30);
@@ -65,9 +76,8 @@ export async function POST(request: NextRequest) {
 
   let assignedTeamMemberId = team_member_id;
   if (!assignedTeamMemberId) {
-    const { data: slot } = await supabase
-      .from("availability_rules")
-      .select("team_member_id")
+    const { data: slot } = await supabaseAdmin
+      .from("availability_rules").select("team_member_id").eq("company_id", session.companyId)
       .eq("is_enabled", true)
       .limit(1)
       .single();
@@ -92,9 +102,9 @@ export async function POST(request: NextRequest) {
         service_type,
       });
 
-      const { data: lead, error: leadError } = await supabase
-        .from("leads")
-        .insert({
+      const { data: lead, error: leadError } = await supabaseAdmin
+        .from("leads").insert({
+      company_id: session.companyId,
           customer_id: customerId,
           status: "booked",
           project_type: service_type,
@@ -110,9 +120,9 @@ export async function POST(request: NextRequest) {
     }
 
     const eventTitle = title ?? (customer_name ? `Quote: ${customer_name}` : "Blocked Time");
-    const { data: event, error: eventError } = await supabase
-      .from("calendar_events")
-      .insert({
+    const { data: event, error: eventError } = await supabaseAdmin
+      .from("calendar_events").insert({
+      company_id: session.companyId,
         team_member_id: assignedTeamMemberId,
         type,
         title: eventTitle,
@@ -138,5 +148,10 @@ export async function POST(request: NextRequest) {
       { error: error instanceof Error ? error.message : "Failed to create event" },
       { status: 500 }
     );
+  }
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

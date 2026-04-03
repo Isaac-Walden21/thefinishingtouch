@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
 
 // GET /api/settings/availability — get availability rules
 export async function GET(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const { searchParams } = new URL(request.url);
   const teamMemberId = searchParams.get("team_member_id");
 
-  let query = supabase
-    .from("availability_rules")
-    .select("*, team_member:team_members(id, name)")
+  let query = supabaseAdmin
+    .from("availability_rules").select("*, team_member:team_members(id, name)").eq("company_id", session.companyId)
     .order("day_of_week");
 
   if (teamMemberId) {
@@ -22,10 +26,19 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // PUT /api/settings/availability — update availability rules
 export async function PUT(request: Request) {
+  try {
+    const session = await getSessionUser();
+    requireRole(session, ["owner", "admin"]);
+
   const body = await request.json();
   const { team_member_id, rules } = body as {
     team_member_id: string;
@@ -45,7 +58,7 @@ export async function PUT(request: Request) {
   }
 
   for (const rule of rules) {
-    await supabase
+    await supabaseAdmin
       .from("availability_rules")
       .upsert(
         {
@@ -60,4 +73,9 @@ export async function PUT(request: Request) {
   }
 
   return NextResponse.json({ success: true, updated: rules.length });
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

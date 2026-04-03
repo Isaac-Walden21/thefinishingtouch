@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { logActivity } from "@/lib/audit";
+import { getSessionUser } from "@/lib/session";
 
 // POST /api/vision/[id]/save — save vision project to customer record
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const session = await getSessionUser();
+
   const { id } = await params;
   const body = await request.json();
   const { customer_id } = body as { customer_id: string };
@@ -19,9 +23,8 @@ export async function POST(
   }
 
   // Verify customer exists
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id, name")
+  const { data: customer } = await supabaseAdmin
+    .from("customers").select("id, name").eq("company_id", session.companyId)
     .eq("id", customer_id)
     .single();
 
@@ -29,7 +32,7 @@ export async function POST(
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("vision_projects")
     .update({
       customer_id,
@@ -47,10 +50,16 @@ export async function POST(
   }
 
   await logActivity({
+      company_id: session.companyId,
     customer_id,
     type: "note",
     description: `Vision project saved to customer profile`,
   });
 
   return NextResponse.json(data);
+
+  } catch (err) {
+    if (err instanceof Response) return err;
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
