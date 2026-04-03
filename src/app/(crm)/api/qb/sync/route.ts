@@ -1,27 +1,58 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/session";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, requireRole } from "@/lib/session";
+import { syncAllUnsynced } from "@/lib/quickbooks";
+import { logAudit } from "@/lib/audit";
 
-// POST /api/qb/sync — manual sync trigger (delegates to invoices/qb-sync)
+// POST /api/qb/sync -- manual sync trigger
 export async function POST() {
   try {
     const session = await getSessionUser();
+    requireRole(session, ["owner", "admin", "manager"]);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const { data: invoices, error } = await supabaseAdmin
+      .from("invoices")
+      .select("*, customer:customers(name, email)")
+      .eq("company_id", session.companyId)
+      .in("status", ["sent", "paid", "partial"])
+      .order("created_at");
 
-  try {
-    const res = await fetch(`${appUrl}/api/invoices/qb-sync`, {
-      method: "POST",
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!invoices?.length) {
+      return NextResponse.json({ synced: 0, message: "No invoices to sync" });
+    }
+
+    const mapped = invoices.map((inv) => ({
+      id: inv.id,
+      customer_name: inv.customer?.name ?? "Unknown",
+      customer_email: inv.customer?.email,
+      line_items: inv.line_items as Array<{
+        description: string;
+        quantity: number;
+        unit_price: number;
+        total: number;
+      }>,
+      due_date: inv.due_date,
+      invoice_number: inv.invoice_number,
+      notes: inv.notes,
+    }));
+
+    const result = await syncAllUnsynced(session.companyId, mapped);
+
+    await logAudit({
+      company_id: session.companyId,
+      action: "qb_sync",
+      category: "integrations",
+      new_value: {
+        synced: result.synced,
+        errors: result.errors.length,
+      },
     });
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Sync failed" },
-      { status: 500 }
-    );
-  }
-
+    return NextResponse.json(result);
   } catch (err) {
     if (err instanceof Response) return err;
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
