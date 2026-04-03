@@ -1,8 +1,67 @@
-# The Finishing Touch CRM — Handoff
+# The Finishing Touch CRM -- Handoff
 
-## Last Session: March 28, 2026 (Session 2)
+## Last Session: April 1, 2026 (Session 3)
 
-## What Was Done (Session 2 — Supabase Wiring)
+## What Was Done (Session 3 -- Multi-Tenant User Management)
+
+### A-Team Deployment (Backend + Frontend parallel)
+
+**Backend Dev** implemented the full multi-tenant auth system:
+- Migration 006: companies, users, invites tables + company_id column on 18 existing tables + RLS policies + indexes
+- New types: UserRole, AppUser, Company, Invite added to src/lib/types.ts
+- New supabaseAdmin client + createServerClient in src/lib/supabase.ts
+- New src/lib/session.ts: getSessionUser() + requireRole() helpers with super-admin impersonation
+- Updated src/lib/audit.ts to accept company_id parameter, switched to supabaseAdmin
+- 8 new auth API routes: signup, login, logout, me, invite (POST+GET), accept-invite
+- 2 new admin API routes: companies list, company toggle active
+- Middleware rewritten: enforces auth on all CRM routes, redirects to /login, token refresh
+- company_id filtering applied to ALL 93 existing API routes (getSessionUser + .eq + role checks)
+- team-members route rewritten to query users table instead of team_members
+- 107 files changed, 2416 lines added
+
+**Frontend Dev** built the auth UI and user experience:
+- Login page (src/app/(public)/login/page.tsx)
+- Signup page (src/app/(public)/signup/page.tsx) -- creates company + owner
+- Invite acceptance page (src/app/(public)/invite/[token]/page.tsx)
+- AuthContext provider (src/contexts/AuthContext.tsx) -- wraps CRM layout
+- Sidebar updated: dynamic user name, logout button, super-admin CompanySwitcher
+- TeamMembers component fully rewritten: self-fetching, invite flow with email+role
+- Settings page updated to use new TeamMembers props
+- 8 files changed, 643 lines added
+
+### Post-Merge
+- TypeScript: PASS (0 errors)
+- Production build: PASS
+- Fixed supabase.ts to use placeholder service key during build
+
+### Result
+- Full multi-tenant auth system operational
+- Every API route protected by getSessionUser() + company_id filtering
+- Self-serve signup creates company + owner user
+- Invite flow for team member onboarding
+- Super-admin (Isaac) can impersonate any company
+- RLS policies as safety net on all tables
+
+## What's Next
+
+### Immediate (to activate auth)
+- Set `SUPABASE_SERVICE_ROLE_KEY` in .env.local and Vercel
+- Run migration 006 against Supabase project
+- Create initial company + user for The Finishing Touch (or use signup flow)
+- Set `is_super_admin = true` on Isaac's user record
+- Backfill existing data rows with the company_id of The Finishing Touch
+
+### Polish
+- Send invite emails via Resend (currently returns URL for manual sharing)
+- Password reset flow (use Supabase built-in)
+- AvailabilityEditor needs to fetch team users internally (currently receives empty array)
+- Consider adding user management page for owner/admin to deactivate users
+
+---
+
+## Previous Sessions
+
+## What Was Done (Session 2 -- Supabase Wiring)
 
 ### A-Team Parallel Deployment (3 agents)
 
