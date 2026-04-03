@@ -1,6 +1,60 @@
 # The Finishing Touch CRM -- Handoff
 
-## Last Session: April 1, 2026 (Session 3)
+## Last Session: March 31, 2026 (Session 4)
+
+## What Was Done (Session 4 -- Multi-Tenant QuickBooks OAuth)
+
+### A-Team Deployment (Backend + Frontend parallel)
+
+**Backend Dev** converted QuickBooks from single-tenant env vars to multi-tenant per-company OAuth:
+- Migration 007: added `qb_realm_id`, `qb_access_token`, `qb_refresh_token`, `qb_token_expires_at` columns to `companies` table
+- Refactored `src/lib/quickbooks.ts`: `getConfig()` replaced with `getAppCredentials()` (app-level env vars only), new `getCompanyQBTokens(companyId)` with auto-refresh, new `refreshCompanyToken(companyId)` that saves back to DB, `connectQB(companyId)` encodes companyId in OAuth state, all exported functions now take companyId as first parameter
+- `/api/qb/auth` -- now requires session, passes companyId to connectQB()
+- `/api/qb/callback` -- extracts companyId from state param, saves tokens to companies table (removed integrations table usage)
+- `/api/qb/status` -- queries companies table for QB connection status by companyId
+- `/api/qb/sync` -- rewritten to do sync inline with companyId instead of proxying via HTTP
+- `/api/invoices/qb-sync` -- uses getCompanyQBTokens(session.companyId), removed integrations table upsert
+- `/api/qb/disconnect` (new) -- clears QB columns, requires owner/admin, audit logged
+- 8 files changed, 270 lines added, 162 removed
+
+**Frontend Dev** wired the QuickBooks IntegrationCard to live API calls:
+- Settings page integrations section: QuickBooks card now fetches real status from `/api/qb/status`
+- Connect button redirects to `/api/qb/auth` for OAuth flow
+- Disconnect button calls `/api/qb/disconnect` and refreshes status
+- Test Connection button calls `/api/qb/status` and reports connected state
+- `?qb=connected` query param shows success banner after OAuth callback, auto-switches to integrations tab
+- Other 5 integrations remain as demo data
+- 1 file changed, 81 lines added, 7 removed
+
+**Post-Merge:**
+- TypeScript: PASS (0 errors)
+- Production build: PASS (after adding Suspense boundary for useSearchParams)
+
+### Result
+- Any company can connect their own QuickBooks from Settings > Integrations
+- Per-company OAuth tokens stored in companies table (not env vars)
+- Automatic token refresh when access token expires (5-min buffer)
+- App-level credentials (CLIENT_ID/SECRET) remain as env vars
+- Full audit trail for connect/disconnect actions
+
+## What's Next
+
+### Immediate (to activate QB integration)
+- Set `QUICKBOOKS_CLIENT_ID` and `QUICKBOOKS_CLIENT_SECRET` env vars (Intuit developer portal)
+- Set `QUICKBOOKS_SANDBOX=true` for sandbox testing
+- Run migration 007 against Supabase project
+- Test full OAuth flow: Settings > Integrations > Connect QuickBooks
+
+### Previous Priorities Still Open
+- Set `SUPABASE_SERVICE_ROLE_KEY` in .env.local and Vercel
+- Run migrations 006-007 against Supabase project
+- Create initial company + user for The Finishing Touch
+- Backfill existing data rows with company_id
+- Send invite emails via Resend (currently returns URL for manual sharing)
+
+---
+
+## Previous Sessions
 
 ## What Was Done (Session 3 -- Multi-Tenant User Management)
 
