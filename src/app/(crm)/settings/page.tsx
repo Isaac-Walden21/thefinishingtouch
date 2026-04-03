@@ -22,7 +22,6 @@ import type {
   CompanySettings,
   IntegrationConfig,
   AuditLogEntry,
-  TeamMember,
 } from "@/lib/types";
 import CompanyProfile from "@/components/settings/CompanyProfile";
 import TeamMembers from "@/components/settings/TeamMembers";
@@ -84,15 +83,9 @@ const inputClass =
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("company");
   const [companySettings, setCompanySettings] = useState(defaultCompanySettings);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-
   useEffect(() => {
-    Promise.all([
-      fetch('/api/team-members').then(r => r.json()),
-      fetch('/api/settings/company').then(r => r.json()).catch(() => null),
-    ])
-      .then(([teamData, companyData]) => {
-        setTeamMembers(teamData);
+    fetch('/api/settings/company').then(r => r.json()).catch(() => null)
+      .then((companyData) => {
         if (companyData && !companyData.error) {
           setCompanySettings(companyData);
         }
@@ -112,26 +105,6 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  const handleAddMember = (member: Partial<TeamMember>) => {
-    const newMember: TeamMember = {
-      id: `tm-${Date.now()}`,
-      name: member.name || "",
-      email: member.email || "",
-      role: member.role || "crew",
-      phone: member.phone || null,
-      color: "#" + Math.floor(Math.random() * 16777215).toString(16),
-      notification_email: null,
-      is_active: true,
-      created_at: new Date().toISOString(),
-    };
-    setTeamMembers((prev) => [...prev, newMember]);
-  };
-
-  const handleDeactivate = (id: string) => {
-    setTeamMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, is_active: !m.is_active } : m))
-    );
-  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -147,7 +120,7 @@ export default function SettingsPage() {
         return (
           <div>
             <h2 className="text-lg font-semibold text-[#0F172A] mb-6">Team Members</h2>
-            <TeamMembers members={teamMembers} onAdd={handleAddMember} onDeactivate={handleDeactivate} />
+            <TeamMembers companyId={""} />
           </div>
         );
 
