@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   GitPullRequestArrow,
@@ -19,6 +20,7 @@ import {
   ClipboardCheck,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -35,9 +37,68 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+function CompanySwitcher({ currentCompanyId }: { currentCompanyId: string }) {
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/companies")
+      .then((r) => r.json())
+      .then((data) => setCompanies(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  async function switchCompany(companyId: string) {
+    document.cookie = `x-impersonate-company=${companyId};path=/;max-age=${60 * 60 * 24}`;
+    window.location.reload();
+  }
+
+  async function clearImpersonation() {
+    document.cookie = "x-impersonate-company=;path=/;max-age=0";
+    window.location.reload();
+  }
+
+  return (
+    <div className="border-b border-white/10 px-3 py-3">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        Super Admin
+      </p>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full rounded-lg bg-white/10 px-3 py-2 text-left text-xs text-white hover:bg-white/20"
+      >
+        {companies.find((c) => c.id === currentCompanyId)?.name ?? "Select company"}
+      </button>
+      {open && (
+        <div className="mt-1 max-h-48 overflow-y-auto rounded-lg bg-white/10">
+          <button
+            onClick={clearImpersonation}
+            className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-white/10"
+          >
+            My Account (stop impersonating)
+          </button>
+          {companies.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => { switchCompany(c.id); setOpen(false); }}
+              className={clsx(
+                "w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10",
+                c.id === currentCompanyId && "bg-white/20"
+              )}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, company, logout } = useAuth();
 
   return (
     <>
@@ -86,6 +147,11 @@ export default function Sidebar() {
           />
         </div>
 
+        {/* Super-admin company switcher */}
+        {user?.is_super_admin && (
+          <CompanySwitcher currentCompanyId={company?.id ?? ""} />
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {navItems.map((item) => {
@@ -110,17 +176,23 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* User profile */}
-        <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-              MH
+        {/* User section */}
+        <div className="mt-auto border-t border-white/10 px-3 py-4">
+          {user && (
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-white">{user.name}</p>
+                <p className="truncate text-xs text-slate-400">{company?.name}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="ml-2 shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
-            <div>
-              <p className="text-sm font-medium text-white">Mike Henderson</p>
-              <p className="text-xs text-slate-500">Admin</p>
-            </div>
-          </div>
+          )}
         </div>
       </aside>
     </>
