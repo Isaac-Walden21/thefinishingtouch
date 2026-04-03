@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Building2,
   Users,
@@ -16,6 +17,7 @@ import {
   Download,
   Trash2,
   X,
+  CheckCircle,
 } from "lucide-react";
 import clsx from "clsx";
 import type {
@@ -64,8 +66,14 @@ const demoIntegrations: IntegrationConfig[] = [
   { id: "int-3", provider: "twilio", label: "Twilio (SMS)", description: "SMS notifications and reminders", status: "connected", last_activity: "2026-03-26T10:15:00Z" },
   { id: "int-4", provider: "google_places", label: "Google Places", description: "Address autocomplete", status: "connected", last_activity: null },
   { id: "int-5", provider: "gmail", label: "Gmail", description: "Outbound email via Resend relay", status: "connected", last_activity: "2026-03-28T07:45:00Z" },
-  { id: "int-6", provider: "quickbooks", label: "QuickBooks Online", description: "Accounting sync for invoices", status: "not_connected", last_activity: null },
 ];
+
+interface QBStatusResponse {
+  connected: boolean;
+  status: string;
+  last_activity: string | null;
+  realm_id: string | null;
+}
 
 const demoAuditLog: AuditLogEntry[] = [
   { id: "al-1", user_name: "Evan Ellis", action: "Changed default margin", category: "Estimates", old_value: "25%", new_value: "30%", created_at: "2026-03-28T14:14:00Z" },
@@ -81,8 +89,37 @@ const inputClass =
   "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#0085FF] focus:outline-none focus:ring-1 focus:ring-[#0085FF]";
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
   const [activeSection, setActiveSection] = useState("company");
   const [companySettings, setCompanySettings] = useState(defaultCompanySettings);
+  const [qbStatus, setQbStatus] = useState<QBStatusResponse | null>(null);
+  const [qbBanner, setQbBanner] = useState(false);
+
+  const fetchQBStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/qb/status");
+      if (res.ok) {
+        const data: QBStatusResponse = await res.json();
+        setQbStatus(data);
+      }
+    } catch {
+      // QB status unavailable -- leave as null
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQBStatus();
+  }, [fetchQBStatus]);
+
+  useEffect(() => {
+    if (searchParams.get("qb") === "connected") {
+      setQbBanner(true);
+      setActiveSection("integrations");
+      const timer = setTimeout(() => setQbBanner(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetch('/api/settings/company').then(r => r.json()).catch(() => null)
       .then((companyData) => {
@@ -263,23 +300,60 @@ export default function SettingsPage() {
           </div>
         );
 
-      case "integrations":
+      case "integrations": {
+        const qbIntegration: IntegrationConfig = {
+          id: "int-6",
+          provider: "quickbooks",
+          label: "QuickBooks Online",
+          description: "Accounting sync for invoices",
+          status: qbStatus?.connected ? "connected" : "not_connected",
+          last_activity: qbStatus?.last_activity ?? null,
+        };
+        const integrations: IntegrationConfig[] = [...demoIntegrations, qbIntegration];
+
         return (
           <div>
             <h2 className="text-lg font-semibold text-[#0F172A] mb-6">Integrations</h2>
+            {qbBanner && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                QuickBooks connected successfully
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {demoIntegrations.map((integration) => (
+              {integrations.map((integration) => (
                 <IntegrationCard
                   key={integration.id}
                   integration={integration}
-                  onConnect={() => {}}
-                  onDisconnect={() => {}}
-                  onTest={async () => true}
+                  onConnect={
+                    integration.provider === "quickbooks"
+                      ? () => { window.location.href = "/api/qb/auth"; }
+                      : undefined
+                  }
+                  onDisconnect={
+                    integration.provider === "quickbooks"
+                      ? async () => {
+                          await fetch("/api/qb/disconnect", { method: "POST" });
+                          await fetchQBStatus();
+                        }
+                      : undefined
+                  }
+                  onTest={
+                    integration.provider === "quickbooks"
+                      ? async () => {
+                          const res = await fetch("/api/qb/status");
+                          if (!res.ok) return false;
+                          const data: QBStatusResponse = await res.json();
+                          return data.connected;
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>
           </div>
         );
+      }
 
       case "availability":
         return (
