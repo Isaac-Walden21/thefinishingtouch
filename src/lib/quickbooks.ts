@@ -1,40 +1,46 @@
 /**
- * QuickBooks Online API client — OAuth2-based integration
- * Handles invoice/payment sync between CRM and QBO
+ * QuickBooks Online API client — multi-tenant OAuth2 integration
+ * Per-company tokens stored in the companies table
  */
+
+import { supabaseAdmin } from "@/lib/supabase";
 
 const QB_BASE_URL = "https://quickbooks.api.intuit.com/v3";
 const QB_SANDBOX_URL = "https://sandbox-quickbooks.api.intuit.com/v3";
 const QB_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
 
-function getConfig() {
+function getAppCredentials(): { clientId: string; clientSecret: string } {
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;
   const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
-  const realmId = process.env.QUICKBOOKS_REALM_ID;
-  const refreshToken = process.env.QUICKBOOKS_REFRESH_TOKEN;
-  const sandbox = process.env.QUICKBOOKS_SANDBOX === "true";
 
-  if (!clientId || !clientSecret || !realmId || !refreshToken) {
-    throw new Error("QuickBooks environment variables not configured");
+  if (!clientId || !clientSecret) {
+    throw new Error("QuickBooks app credentials not configured");
   }
 
-  return { clientId, clientSecret, realmId, refreshToken, sandbox };
+  return { clientId, clientSecret };
 }
 
-function getBaseUrl(sandbox: boolean): string {
+function getBaseUrl(): string {
+  const sandbox = process.env.QUICKBOOKS_SANDBOX === "true";
   return sandbox ? QB_SANDBOX_URL : QB_BASE_URL;
 }
 
-/** Exchange refresh token for a new access token */
-export async function refreshToken(): Promise<{
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-}> {
-  const config = getConfig();
-  const credentials = Buffer.from(
-    `${config.clientId}:${config.clientSecret}`
-  ).toString("base64");
+/** Refresh a company's QB tokens via Intuit token endpoint */
+export async function refreshCompanyToken(
+  companyId: string
+): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+  const { data: company, error } = await supabaseAdmin
+    .from("companies")
+    .select("qb_refresh_token")
+    .eq("id", companyId)
+    .single();
+
+  if (error || !company?.qb_refresh_token) {
+    throw new Error("Company has no QuickBooks refresh token");
+  }
+
+  const { clientId, clientSecret } = getAppCredentials();
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
   const res = await fetch(QB_TOKEN_URL, {
     method: "POST",
@@ -44,7 +50,7 @@ export async function refreshToken(): Promise<{
     },
     body: new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: config.refreshToken,
+      refresh_token: company.qb_refresh_token,
     }),
   });
 
@@ -53,21 +59,72 @@ export async function refreshToken(): Promise<{
     throw new Error(`QuickBooks token refresh failed: ${err}`);
   }
 
-  return res.json();
+  const tokens = await res.json();
+  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+
+  const { error: updateError } = await supabaseAdmin
+    .from("companies")
+    .update({
+      qb_access_token: tokens.access_token,
+      qb_refresh_token: tokens.refresh_token,
+      qb_token_expires_at: expiresAt.toISOString(),
+    })
+    .eq("id", companyId);
+
+  if (updateError) {
+    throw new Error(`Failed to save refreshed QB tokens: ${updateError.message}`);
+  }
+
+  return {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    expiresAt,
+  };
 }
 
-/** Generate the QuickBooks OAuth2 authorization URL */
-export function connectQB(): string {
-  const config = getConfig();
+/** Fetch a company's QB tokens, auto-refreshing if expiring within 5 minutes */
+export async function getCompanyQBTokens(
+  companyId: string
+): Promise<{ realmId: string; accessToken: string; refreshToken: string; expiresAt: Date }> {
+  const { data: company, error } = await supabaseAdmin
+    .from("companies")
+    .select("qb_realm_id, qb_access_token, qb_refresh_token, qb_token_expires_at")
+    .eq("id", companyId)
+    .single();
+
+  if (error || !company?.qb_realm_id || !company?.qb_access_token || !company?.qb_refresh_token) {
+    throw new Error("Company has no QuickBooks connection");
+  }
+
+  const expiresAt = new Date(company.qb_token_expires_at);
+  const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+
+  if (expiresAt < fiveMinFromNow) {
+    const refreshed = await refreshCompanyToken(companyId);
+    return { realmId: company.qb_realm_id, ...refreshed };
+  }
+
+  return {
+    realmId: company.qb_realm_id,
+    accessToken: company.qb_access_token,
+    refreshToken: company.qb_refresh_token,
+    expiresAt,
+  };
+}
+
+/** Generate the QuickBooks OAuth2 authorization URL for a company */
+export function connectQB(companyId: string): string {
+  const { clientId } = getAppCredentials();
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/qb/callback`;
   const scopes = "com.intuit.quickbooks.accounting";
+  const state = JSON.stringify({ companyId, nonce: crypto.randomUUID() });
 
   const params = new URLSearchParams({
-    client_id: config.clientId,
+    client_id: clientId,
     response_type: "code",
     scope: scopes,
     redirect_uri: redirectUri,
-    state: crypto.randomUUID(),
+    state,
   });
 
   return `https://appcenter.intuit.com/connect/oauth2?${params.toString()}`;
@@ -75,14 +132,14 @@ export function connectQB(): string {
 
 interface QBApiOptions {
   accessToken: string;
+  realmId: string;
   method?: "GET" | "POST";
   body?: Record<string, unknown>;
 }
 
 async function qbApi(path: string, options: QBApiOptions) {
-  const config = getConfig();
-  const baseUrl = getBaseUrl(config.sandbox);
-  const url = `${baseUrl}/company/${config.realmId}${path}`;
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}/company/${options.realmId}${path}`;
 
   const res = await fetch(url, {
     method: options.method ?? "GET",
@@ -136,7 +193,7 @@ function mapInvoiceToQB(invoice: {
 
 /** Push a single invoice to QuickBooks */
 export async function pushInvoice(
-  accessToken: string,
+  companyId: string,
   invoice: {
     customer_name: string;
     line_items: Array<{
@@ -151,9 +208,11 @@ export async function pushInvoice(
   },
   qbCustomerId: string
 ) {
+  const { accessToken, realmId } = await getCompanyQBTokens(companyId);
   const qbInvoice = mapInvoiceToQB(invoice, qbCustomerId);
   return qbApi("/invoice", {
     accessToken,
+    realmId,
     method: "POST",
     body: qbInvoice,
   });
@@ -161,7 +220,7 @@ export async function pushInvoice(
 
 /** Push a payment record to QuickBooks */
 export async function pushPayment(
-  accessToken: string,
+  companyId: string,
   payment: {
     amount: number;
     invoice_id: string;
@@ -171,8 +230,10 @@ export async function pushPayment(
   qbInvoiceId: string,
   qbCustomerId: string
 ) {
+  const { accessToken, realmId } = await getCompanyQBTokens(companyId);
   return qbApi("/payment", {
     accessToken,
+    realmId,
     method: "POST",
     body: {
       CustomerRef: { value: qbCustomerId },
@@ -195,13 +256,15 @@ export async function pushPayment(
 
 /** Query QuickBooks for a customer by name, create if not found */
 export async function findOrCreateQBCustomer(
-  accessToken: string,
+  companyId: string,
   name: string,
   email?: string | null
 ) {
+  const { accessToken, realmId } = await getCompanyQBTokens(companyId);
   const query = `SELECT * FROM Customer WHERE DisplayName = '${name.replace(/'/g, "\\'")}'`;
   const result = await qbApi(`/query?query=${encodeURIComponent(query)}`, {
     accessToken,
+    realmId,
   });
 
   const existing = result.QueryResponse?.Customer?.[0];
@@ -209,6 +272,7 @@ export async function findOrCreateQBCustomer(
 
   const newCustomer = await qbApi("/customer", {
     accessToken,
+    realmId,
     method: "POST",
     body: {
       DisplayName: name,
@@ -221,7 +285,7 @@ export async function findOrCreateQBCustomer(
 
 /** Sync all unsynced invoices to QuickBooks */
 export async function syncAllUnsynced(
-  accessToken: string,
+  companyId: string,
   invoices: Array<{
     id: string;
     customer_name: string;
@@ -243,11 +307,11 @@ export async function syncAllUnsynced(
   for (const invoice of invoices) {
     try {
       const qbCustomerId = await findOrCreateQBCustomer(
-        accessToken,
+        companyId,
         invoice.customer_name,
         invoice.customer_email
       );
-      await pushInvoice(accessToken, invoice, qbCustomerId);
+      await pushInvoice(companyId, invoice, qbCustomerId);
       synced++;
     } catch (error) {
       errors.push({
