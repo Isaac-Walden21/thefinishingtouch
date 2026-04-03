@@ -285,7 +285,7 @@ export default function SettingsPage() {
         return (
           <div>
             <h2 className="text-lg font-semibold text-[#0F172A] mb-6">Availability Rules</h2>
-            <AvailabilityEditor teamMembers={teamMembers.filter((m) => m.is_active)} />
+            <AvailabilityEditor teamMembers={[]} />
           </div>
         );
 
